@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speaker Design Tool v1.15 - User Manual</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <div class="container mx-auto px-4 py-8 flex-grow">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Speaker Design Tool v1.15 - User Manual</h1>
+            <p class="text-gray-600"><a href="Speaker Design Tool.html" class="text-blue-600 hover:underline">&larr; Back to Application</a></p>
+        </header>
+
+        <div class="bg-white rounded-lg shadow-md p-6 lg:p-10 manual-content">
+
+            <section>
+                <h2>1. Introduction</h2>
+                <p>Welcome to the Speaker Design Tool (v1.15). This manual explains how to use the tool to design, calculate, and validate professional audio systems.</p>
+                <p>The tool saves your work (projects and equipment) to your browser's local storage automatically. This means your data persists even if you close the browser, but it is not backed up online.</p>
+
+                <h3>1.1. The Main Views</h3>
+                <ul>
+                    <li><strong>Calculator:</strong> Your main workspace for building, calculating, and editing speaker lines.</li>
+                    <li><strong>Database:</strong> Lets you add, remove, and manage your private database of speakers, cables, and amplifiers.</li>
+                    <li><strong>Reports:</strong> Provides a complete system overview, including power summaries, warning counts, and detailed read-only tables of your calculations. This is also where you generate PDF reports.</li>
+                    <li><strong>Explanations:</strong> The "technical reference" section. It details the formulas, standards, and theory behind the calculations.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>2. The Calculator View</h2>
+                <p>This is where the work happens. You can work on a Low-Impedance (Low-Z) or a 100V project simultaneously.</p>
+                
+                <h3>2.1. Starting a Project</h3>
+                <ol>
+                    <li><strong>Enter Project Name:</strong> At the top of the view, give your project a name (e.g., "Main Hall PA"). This will be used for saving and exporting.</li>
+                    <li><strong>Select a Tab:</strong> Choose either the "Low-Z Calculator" or "100V Calculator" sub-tab.</li>
+                </ol>
+
+                <h3>2.2. Building a Speaker Line</h3>
+                <p>Calculations are built as a "tree." You must first create a "root" (the start of the line connected to an amp) and then you can add "children" (speakers tapping off the line).</p>
+                
+                <p><strong>To Start a New Line (Root Node):</strong></p>
+                <ol>
+                    <li>In the "Select Amplifier (New Line)" dropdown, choose the amplifier that will power this line.</li>
+                    <li>The "Or Select ID (Tap Line)" dropdown must be set to "-- Select Tap --".</li>
+                    <li>Fill out the speaker, cable, and length fields for this first speaker.</li>
+                    <li>Click "Add Calculation". Your first node (e.g., L-1) will appear in the <strong>Results Grid</strong> at the bottom of the page.</li>
+                </ol>
+
+                <p><strong>To Tap an Existing Line (Child Node):</strong></p>
+                <ol>
+                    <li>The "Select Amplifier (New Line)" dropdown must be set to "-- Select Amplifier --".</li>
+                    <li>In the "Or Select ID (Tap Line)" dropdown, choose the node you want to tap from (e.g., "L-1").</li>
+                    <li>Fill out the speaker, cable, and length fields for this new speaker. The cable length is measured *from the parent node* (L-1), not from the amplifier.</li>
+                    <li>Click "Add Calculation". Your new node (e.g., L-1.1) will appear, indented under its parent.</li>
+                </ol>
+
+                <h3>2.3. Managing Results</h3>
+                <ul>
+                    <li><strong>Status Indicators:</strong> The Results Grid provides immediate feedback. Look for <span class="badge badge-green">OK</span>, <span class="badge badge-yellow">Warning</span>, or <span class="badge badge-red">Hazard</span> badges.</li>
+                    <li><strong>Deleting Nodes:</strong> Click the red <strong>&times;</strong> button on any row to delete that calculation. <em>Note: Deleting a parent node will also delete all speakers attached to it.</em></li>
+                    <li><strong>Clear Results:</strong> The "Clear Results" button wipes the current calculator (Low-Z or 100V) completely.</li>
+                </ul>
+
+                <h3>2.4. Saving and Loading Projects (Import/Export)</h3>
+                <p>Because this tool runs in your browser, you "Save" by exporting a CSV file and "Load" by importing it back.</p>
+
+                <p><strong>How to Save a Project:</strong></p>
+                <ol>
+                    <li>Ensure you are on the correct tab (Low-Z or 100V). These are saved separately.</li>
+                    <li>Click the <strong>Export CSV</strong> button.</li>
+                    <li>A file named <code>[Project Name] - [Type].csv</code> will download to your computer. Keep this file safe; it is your project save file.</li>
+                </ol>
+
+                <p><strong>How to Load a Project:</strong></p>
+                <ol>
+                    <li>Select the tab (Low-Z or 100V) matching the file you want to load.</li>
+                    <li>Click the <strong>Import CSV</strong> button.</li>
+                    <li>Select your previously saved CSV file.</li>
+                    <li>The tool will clear the current screen and reconstruct your entire calculation tree exactly as it was.</li>
+                </ol>
+            </section>
+
+            <section>
+                <h2>3. The Database View</h2>
+                <p>This view gives you full control over the equipment used in the calculators. The app runs on this local database.</p>
+                <p>Use the "Manage Speakers," "Manage Cables," and "Manage Amplifiers" tabs to see each equipment type.</p>
+
+                <h3>3.1. How to Add/Edit Equipment</h3>
+                <ul>
+                    <li><strong>To Add:</strong> On the left side, fill out the "Add New..." form. Fields with a * are required. Click the "Add" button.</li>
+                    <li><strong>To Edit:</strong> Click the "Edit" button (pencil icon &#9998;) in any row. The form on the left will be populated with that item's data. Change the data and click the "Save Changes" button.</li>
+                </ul>
+                
+                <h3>3.2. How to Delete Equipment</h3>
+                <ul>
+                    <li><strong>Delete One Item:</strong> Click the red "Delete" button (&times;) in the table row.</li>
+                    <li><strong>Default Items:</strong> Items marked as "(Default)" are protected and cannot be deleted or renamed, ensuring the calculator always has base data to work with.</li>
+                    <li><strong>Delete All Items:</strong> Click the "Clear All" button to remove all custom items. Default items will remain.</li>
+                </ul>
+
+                <h3>3.3. Database Import & Export</h3>
+                <p>This is for backing up your equipment library to share between computers or colleagues.</p>
+                <ul>
+                    <li><strong>Export CSV:</strong> Saves your current database (e.g., "speakers-db.csv") to your computer.</li>
+                    <li><strong>Import CSV:</strong> Adds items from a compatible CSV file. It will skip any items that have a duplicate "Model" or "Name" ID.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>4. The Reports View</h2>
+                <p>This view aggregates all your work into a concise format for review and client presentation.</p>
+
+                <h3>4.1. System Summary</h3>
+                <p>At the top, you will see colored summary cards for both Low-Z and 100V systems. These display:</p>
+                <ul>
+                    <li><strong>Total Nodes:</strong> The count of speakers/connections.</li>
+                    <li><strong>Total Power:</strong> The calculated total wattage drawn from the amplifiers.</li>
+                    <li><strong>Warnings/Hazards:</strong> A count of potential issues (Voltage Drop, Impedance, etc.).</li>
+                </ul>
+
+                <h3>4.2. Detailed Calculation Tables</h3>
+                <p>Below the summary, you will find read-only tables listing every node in your project, identical to the data in the Calculator view but formatted for easy reading.</p>
+                
+                <h3>4.3. Generating a PDF Report</h3>
+                <ol>
+                    <li>Fill in the header fields: "Company Name," "Project Name," and "System Designer."</li>
+                    <li>Click <strong>Generate PDF Report</strong>.</li>
+                    <li>The app will create a formatted, one-page (or multi-page) PDF document containing the header info and all calculation tables, perfect for installers or clients.</li>
+                </ol>
+            </section>
+        </div>
+    </div>
+    
+    <footer class="app-footer">
+        App Admin: Sindre Løvlie Haugen | E-mail: <a href="mailto:sindre.haugen@gmail.com">sindre.haugen@gmail.com</a> | LinkedIn: <a href="https://www.linkedin.com/in/sindrelhaugen/" target="_blank">linkedin.com/in/sindrelhaugen</a>
+    </footer>
+</body>
+</html>
