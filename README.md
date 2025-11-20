@@ -1,10 +1,10 @@
-# **Speaker Design Tool v2.6**
+# **Speaker Design Tool v2.0**
 
 A professional-grade, browser-based calculator for designing Low-Impedance (Low-Z) and High-Impedance (100V/70V) audio systems.
 
 ## **📖 Overview**
 
-The **Speaker Design Tool v2.6** bridges the gap between electrical engineering and acoustic system design. It features a comprehensive **Physics Engine** that simulates the entire signal chain: from the amplifier, through the complex impedance of cabling (thermal & reactive), to the acoustic output at the listener's ears.
+The **Speaker Design Tool v2.0** bridges the gap between electrical engineering and acoustic system design. It features a comprehensive **Physics Engine** that simulates the entire signal chain: from the amplifier, through the complex impedance of cabling (thermal & reactive), to the acoustic output at the listener's ears.
 
 Designed for AV integrators and system designers, it ensures your designs meet critical performance standards before installation begins.
 
