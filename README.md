@@ -48,12 +48,6 @@ We calculate voltage drop using vector math to account for phase angles between 
 * **Inductive Reactance (**$X\_L$**):** $2 \\cdot \\pi \\cdot f \\cdot L$  
 * **Total Impedance (**$Z$**):** $\\sqrt{R\_{hot}^2 \+ X\_L^2}$
 
-### **2\. Acoustic Behavior**
-
-* **SPL Loss (Electrical):** $20 \\cdot \\log\_{10}(V\_{load} / V\_{source})$  
-* **Inverse Square Law (Distance):** $SPL\_{dist} \= SPL\_{1m} \- 20 \\cdot \\log\_{10}(Distance)$  
-* **Speed of Sound (**$c$**):** $331.3 \+ (0.606 \\cdot T\_{amb})$  
-* **Delay Time:** $Distance / c$
 
 ## **🚀 Quick Start**
 
