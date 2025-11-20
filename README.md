@@ -65,6 +65,7 @@ We calculate voltage drop using vector math to account for phase angles between 
 * **Electrical SPL Loss:** $20 \cdot \log_{10}(V_{load} / V_{source})$
 
 ## **🚀 Quick Start**
+_Optional: Import the included csv databases of products or build your own product library._
 
 1.  **Run:** Open `Speaker Design Tool.html` in any modern web browser (Chrome, Edge, Firefox).
 2.  **Configure:** Set your **Project Name** and **Ambient Temperature** (top right).
