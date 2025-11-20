@@ -40,6 +40,19 @@ The tool evaluates your design against the following professional standards:
 | **100V Line Voltage** | Distributed Systems | < 95V | < 90V | Transformer saturation, distortion. |
 | **Headroom** | Amp Loading | > 80-85% | > 100% | Clipping, amplifier protection shutdown. |
 
+## **📚 Included Database Library**
+
+The tool comes pre-loaded with specifications for professional equipment from the following manufacturers:
+
+### **🔊 Speakers**
+Amadeus Labs, Audac, Biamp, Blaze Audio, Bose Professional, Community, DAS Audio, EAW, FBT Audio, HK Audio, JBL, K-array, K-gear, LD Systems, Martin Audio, QSC, RCF, SE Audiotechnik, Sonance, Turbosound, Void Acoustics, Yamaha.
+
+### **🔌 Amplifiers**
+Ashly, Audac, Behringer, Blaze Audio, Bose Professional, Crestron, Crown, DAP, Dynacord, Full Fat Audio, Hoellstern, Innosonix, K-Array, K-GEAR, Lab Gruppen, LEA Professional, LD Systems, Linea Research, MC2 Audio, Powersoft, QSC, RAM Audio, SE Audiotechnik, TOA Electronics, Wharfedale Pro, XTA, Yamaha.
+
+### **⚡ Cables**
+Adam Hall, AudioQuest, Belden, Canare, Cordial, Crestron, Draka, Eurocable, Extron, Gotham, Kelsey, Klotz, LAPP, Liberty, Mogami, Procab, SCP, Sommer, Supra, Tasker, Titanex, Van Damme, West Penn.
+
 ## **🧮 Math & Formulas**
 
 ### **Electrical Transmission**
