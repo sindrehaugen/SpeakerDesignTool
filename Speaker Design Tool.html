@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speaker Design Tool v2.0.2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app" class="app-container" v-cloak>
+        <header>
+            <div>
+                <h1 class="text-2xl font-semibold text-white">Speaker Design Tool <span class="text-sm text-secondary font-normal">{{ APP_VERSION }}</span></h1>
+                <p class="text-sm text-secondary">Professional Audio System Calculator</p>
+            </div>
+            <div class="flex gap-2">
+                <button @click="clearCurrentResults" class="btn btn-danger btn-sm">Clear Results</button>
+                <button @click="exportProjectCsv" class="btn btn-secondary btn-sm">Save Project</button>
+                <button @click="triggerProjectImport" class="btn btn-secondary btn-sm">Open Project</button>
+                <input type="file" ref="projectImportInput" class="hidden" accept=".csv" @change="loadProjectCsv">
+            </div>
+        </header>
+
+        <nav class="nav-bar">
+            <button @click="currentView='calculator'" :class="['nav-btn', {active: currentView==='calculator'}]">Calculator</button>
+            <button @click="currentView='database'" :class="['nav-btn', {active: currentView==='database'}]">Database</button>
+            <button @click="currentView='reports'" :class="['nav-btn', {active: currentView==='reports'}]">Reports</button>
+            <button @click="currentView='explanations'" :class="['nav-btn', {active: currentView==='explanations'}]">Technical Reference</button>
+            <button @click="currentView='manual'" :class="['nav-btn', {active: currentView==='manual'}]">User Manual</button>
+        </nav>
+
+        <div v-if="currentView === 'calculator'">
+            <div class="panel grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end mb-4">
+                <div>
+                    <label class="form-label">Project Name</label>
+                    <input v-model="project.name" class="form-input h-[42px]" placeholder="Enter project name...">
+                </div>
+                <div>
+                     <label class="form-label">Calculate</label>
+                     <div class="flex gap-2">
+                        <button @click="setMode('low-z')" :class="['btn w-32 h-[42px] font-bold', calculatorMode==='low-z'?'btn-primary':'btn-secondary']">Low-Z</button>
+                        <button @click="setMode('high-v')" :class="['btn w-32 h-[42px] font-bold', calculatorMode==='high-v'?'btn-primary':'btn-secondary']">100V</button>
+                        <div class="flex items-center gap-2 bg-bg-app border border-border-subtle p-1 rounded ml-2 h-[42px]">
+                            <label class="text-[10px] text-secondary font-bold uppercase px-2">Ambient Temp</label>
+                            <input type="number" v-model.number="globalSettings.temp_c" class="form-input w-16 text-center !py-1 !h-8 !bg-panel border-none">
+                            <span class="text-xs text-secondary pr-2">°C</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3 class="text-sm font-semibold text-accent-primary mb-4 uppercase">
+                    Add {{ calculatorMode === 'low-z' ? 'Low-Impedance' : '100V' }} Connection
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="md:col-span-1">
+                        <label class="form-label">Source (Parent)</label>
+                        <select v-model="inputForm.parentId" class="form-select mb-2">
+                            <option :value="null">Start New Line (Amp)</option>
+                            <option v-for="n in activeFlatList" :value="n.id">{{n.id}} ({{ getDeviceLabel('speakers', n.speakerModel) }})</option>
+                        </select>
+                        <div v-if="!inputForm.parentId" class="p-3 bg-bg-app rounded border border-border-subtle animate-fade-in">
+                            <label class="form-label text-[10px] mb-1">Select Amplifier</label>
+                            <select v-model="inputForm.ampModel" class="form-select text-xs mb-2">
+                                <option value="">-- Select --</option>
+                                <option v-for="a in ampOptions" :value="a.id">{{a.label}}</option>
+                            </select>
+                            <div v-if="calculatorMode === 'low-z'" class="flex items-center gap-2">
+                                <input type="checkbox" v-model="inputForm.useBridgeMode" id="bridgeCheck">
+                                <label for="bridgeCheck" class="text-xs text-secondary cursor-pointer">Bridge Mode</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-1">
+                        <label class="form-label">Speaker</label>
+                        <select v-model="inputForm.speakerModel" class="form-select mb-2">
+                            <option value="">-- Select Speaker --</option>
+                            <option v-for="s in speakerOptions" :value="s.id">{{s.label}}</option>
+                        </select>
+                        
+                        <div v-if="calculatorMode==='low-z'">
+                            <label class="form-label">Quantity (Parallel)</label>
+                            <input type="number" v-model.number="inputForm.parallelCount" class="form-input" min="1">
+                        </div>
+                        <div v-else>
+                            <label class="form-label">Power Tap (W)</label>
+                            <select v-model.number="inputForm.tapPower" class="form-select">
+                                <option v-for="t in getSpeakerTaps(inputForm.speakerModel)" :value="t">{{t}} W</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="form-label flex justify-between">Main Cable Run <span class="text-[10px] text-dim lowercase font-normal">length (m)</span></label>
+                            <div class="flex gap-1 mb-2">
+                                <select v-model="inputForm.cableModel" class="form-select text-xs flex-grow">
+                                    <option value="">-- Select Cable --</option>
+                                    <option v-for="c in cableOptions" :value="c.id">{{c.label}}</option>
+                                </select>
+                                <input type="number" v-model.number="inputForm.length" class="form-input w-16 text-center" placeholder="m" min="0">
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col">
+                             <div class="flex justify-between items-center mb-1">
+                                <label class="form-label !mb-0">Final Cable (Opt) <span class="text-[10px] text-dim lowercase font-normal">length (m)</span></label>
+                                <button @click="inputForm.hasTapCable=!inputForm.hasTapCable" class="text-xs text-status-info hover:underline">
+                                    {{inputForm.hasTapCable ? 'Remove' : 'Add'}}
+                                </button>
+                            </div>
+                            <div v-if="inputForm.hasTapCable" class="flex gap-1 animate-fade-in mb-2">
+                                <select v-model="inputForm.cableModel2" class="form-select text-xs flex-grow">
+                                    <option value="">-- Select Cable --</option>
+                                    <option v-for="c in cableOptions" :value="c.id">{{c.label}}</option>
+                                </select>
+                                <input type="number" v-model.number="inputForm.length2" class="form-input w-16 text-center" placeholder="m" min="0">
+                            </div>
+                            <button @click="addNode" class="btn btn-primary w-full h-[38px] mt-auto">Add Calculation</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" style="padding:0; overflow:hidden;">
+                <div class="results-header hidden md:grid md:grid-cols-[70px_1.5fr_2fr_2fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr_100px_40px] gap-4">
+                    <div>ID</div><div>Name</div><div>Details</div><div>Cable</div>
+                    <div>{{ calculatorMode === 'low-z' ? 'Min Load (Z)' : 'Total Power' }}</div>
+                    <div v-if="calculatorMode === 'low-z'">Nom Load (Z)</div><div v-else class="hidden md:block"></div>
+                    <div>{{ calculatorMode === 'low-z' ? 'V Drop %' : 'V Drop V' }}</div><div>Pow Loss</div>
+                    <div>{{ calculatorMode === 'low-z' ? 'Elec. Loss' : 'V @ Speaker' }}</div><div>Status</div><div></div>
+                </div>
+                <div class="tree-container">
+                    <tree-node v-for="node in activeRootNodes" :key="node.id" :node="node" :mode="calculatorMode" :get-label="getDeviceLabel" @delete="deleteNode"></tree-node>
+                </div>
+                <div v-if="activeRootNodes.length===0" class="p-12 text-center text-secondary italic">No {{ calculatorMode === 'low-z' ? 'Low-Impedance' : '100V' }} calculations yet.</div>
+            </div>
+        </div>
+
+        <div v-if="currentView==='database'" class="panel">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-border-subtle pb-4">
+                <h2 class="text-lg font-semibold text-white">Equipment Database</h2>
+                <div class="flex gap-2 mt-2 md:mt-0">
+                    <button @click="dbTab='speakers'" :class="['btn btn-sm', dbTab==='speakers'?'btn-primary':'btn-secondary']">Speakers</button>
+                    <button @click="dbTab='cables'" :class="['btn btn-sm', dbTab==='cables'?'btn-primary':'btn-secondary']">Cables</button>
+                    <button @click="dbTab='amplifiers'" :class="['btn btn-sm', dbTab==='amplifiers'?'btn-primary':'btn-secondary']">Amplifiers</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-1 bg-bg-input p-4 rounded border border-border-subtle h-fit">
+                    <h3 class="text-sm font-semibold mb-4 text-accent-primary">{{ dbEditMode ? 'Edit' : 'Add New' }} {{ dbTab.slice(0,-1) }}</h3>
+                    <form @submit.prevent="saveDbItem" class="space-y-3">
+                        <div><label class="form-label">* Model Name (ID)</label><input v-model="dbForm.id" class="form-input" :disabled="dbEditMode" required></div>
+                        <div><label class="form-label">Brand</label><input v-model="dbForm.brand" class="form-input"></div>
+                        <div v-if="dbTab==='speakers'" class="space-y-3 animate-fade-in">
+                            <div class="grid grid-cols-2 gap-2"><div><label class="form-label">Impedance (Ω)</label><input v-model.number="dbForm.impedance" type="number" step="0.1" class="form-input"></div><div><label class="form-label">W (RMS)</label><input v-model.number="dbForm.wattage_rms" type="number" class="form-input"></div></div>
+                            <div class="grid grid-cols-2 gap-2"><div><label class="form-label">Max SPL (1m)</label><input v-model.number="dbForm.max_spl" type="number" class="form-input"></div><div><label class="form-label">W (Peak)</label><input v-model.number="dbForm.wattage_peak" type="number" class="form-input"></div></div>
+                            <div><label class="form-label">100V Taps (comma separated)</label><input v-model="dbForm.taps" class="form-input" placeholder="e.g. 60,30,15"></div>
+                            <div><label class="form-label">Category</label><select v-model="dbForm.category" class="form-select"><option value="satellite">Satellite</option><option value="small_fullrange">Small Fullrange</option><option value="large_fullrange">Large Fullrange</option><option value="subwoofer">Subwoofer</option></select></div>
+                        </div>
+                        <div v-if="dbTab==='cables'" class="space-y-3 animate-fade-in">
+                            <div><label class="form-label">Resistance (Ω/km)</label><input v-model.number="dbForm.resistance" type="number" step="0.01" class="form-input" required></div>
+                            <div class="grid grid-cols-2 gap-2"><div><label class="form-label">Capacitance (pF/m)</label><input v-model.number="dbForm.capacitance" type="number" class="form-input"></div><div><label class="form-label">Inductance (µH/m)</label><input v-model.number="dbForm.inductance" type="number" step="0.01" class="form-input"></div></div>
+                        </div>
+                        <div v-if="dbTab==='amplifiers'" class="space-y-3 animate-fade-in">
+                            <div class="grid grid-cols-2 gap-2"><div><label class="form-label">W (8Ω)</label><input v-model.number="dbForm.watt_8" type="number" class="form-input"></div><div><label class="form-label">W (4Ω)</label><input v-model.number="dbForm.watt_4" type="number" class="form-input"></div></div>
+                            <div><label class="form-label">W (100V)</label><input v-model.number="dbForm.watt_100v" type="number" class="form-input"></div>
+                            <div class="grid grid-cols-2 gap-2"><div><label class="form-label">Damping Factor</label><input v-model.number="dbForm.df" type="number" class="form-input"></div><div><label class="form-label">Min Load (Ω)</label><input v-model.number="dbForm.min_load" type="number" step="0.1" class="form-input"></div></div>
+                        </div>
+                        <div class="flex gap-2 mt-4"><button type="submit" class="btn btn-primary flex-grow">{{ dbEditMode ? 'Save Changes' : 'Add Item' }}</button><button type="button" v-if="dbEditMode" @click="resetDbForm" class="btn btn-secondary">Cancel</button></div>
+                    </form>
+                    <div class="mt-6 pt-6 border-t border-border-subtle">
+                        <h4 class="text-xs font-semibold text-secondary mb-2 uppercase">Data Tools</h4>
+                        <div class="flex flex-wrap gap-2"><button @click="triggerDbImport" class="btn btn-sm btn-secondary">Import CSV</button><button @click="exportDbCsv" class="btn btn-sm btn-secondary">Export CSV</button><button @click="resetDbDefaults" class="btn btn-sm btn-danger">Reset Defaults</button></div>
+                        <input type="file" ref="dbImportInput" class="hidden" accept=".csv" @change="handleDbImport">
+                    </div>
+                </div>
+                <div class="lg:col-span-2 overflow-y-auto max-h-[600px]">
+                    <table class="data-table w-full">
+                        <thead><tr><th>Model / ID</th><th>Brand</th><th>Specs</th><th>Action</th></tr></thead>
+                        <tbody>
+                            <tr v-for="(item, key) in currentDbData" :key="key">
+                                <td class="font-medium text-white">{{ key }}</td><td class="text-secondary">{{ item.brand }}</td>
+                                <td class="text-xs text-dim"><span v-if="dbTab==='speakers'">{{item.impedance}}Ω, {{item.wattage_rms}}W</span><span v-if="dbTab==='cables'">{{item.resistance}}Ω/km</span><span v-if="dbTab==='amplifiers'">{{item.watt_8}}W@8Ω, DF:{{item.df}}</span></td>
+                                <td><div class="flex gap-1"><button @click="editDbItem(key)" class="text-status-info hover:text-white px-2">✎</button><button @click="deleteDbItem(dbTab, key)" class="text-status-danger hover:text-white px-2">&times;</button></div></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div v-if="currentView==='reports'" class="panel">
+            <h2 class="text-xl font-semibold mb-6 text-white">System Report</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="p-4 rounded bg-bg-input border border-border-subtle"><div class="text-3xl font-bold text-white">{{ reportSummary.totalNodes }}</div><div class="text-xs uppercase text-secondary font-bold mt-1">Total Nodes</div></div>
+                <div class="p-4 rounded bg-bg-input border border-border-subtle"><div class="text-3xl font-bold text-status-ok">{{ reportSummary.totalPower.toFixed(0) }} W</div><div class="text-xs uppercase text-secondary font-bold mt-1">Total Power</div></div>
+                <div class="p-4 rounded bg-bg-input border border-border-subtle"><div class="text-3xl font-bold text-status-warn">{{ reportSummary.warnings }}</div><div class="text-xs uppercase text-secondary font-bold mt-1">Warnings</div></div>
+                <div class="p-4 rounded bg-bg-input border border-border-subtle"><div class="text-3xl font-bold text-status-danger">{{ reportSummary.errors }}</div><div class="text-xs uppercase text-secondary font-bold mt-1">Errors</div></div>
+            </div>
+            
+            <div class="bg-bg-input border border-border-subtle rounded p-4 mb-8">
+                <h3 class="text-xs uppercase font-bold text-muted mb-2">Status Code Legend</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div class="flex items-start gap-2">
+                        <span class="badge badge-warn mt-1">Warning</span>
+                        <div class="text-secondary text-xs">
+                            <div><strong>Voltage Drop:</strong> > 5% (Audible loss)</div>
+                            <div><strong>Damping Factor:</strong> < 20 (Low-Z only)</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="badge badge-danger mt-1">Error</span>
+                        <div class="text-secondary text-xs">
+                            <div><strong>Voltage Drop:</strong> > 10% (Critical Power Loss)</div>
+                            <div><strong>Damping Factor:</strong> < 10 (Poor Bass Control)</div>
+                            <div><strong>Low Headroom:</strong> Speaker Power > 80-85% of Amp Capacity</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div><label class="form-label">Company Name</label><input v-model="reportForm.company" class="form-input" placeholder="Your Company Name"></div>
+                <div><label class="form-label">System Designer</label><input v-model="reportForm.designer" class="form-input" placeholder="Your Name"></div>
+            </div>
+            <button @click="generatePdf" class="btn btn-primary w-full md:w-auto flex items-center justify-center gap-2"><span class="text-lg">📄</span> Generate PDF Report</button>
+            
+            <div class="mt-8 pt-6 border-t border-border-subtle space-y-8">
+                 <div v-if="flatLowZList.length > 0">
+                     <h3 class="text-sm font-semibold text-secondary mb-4 uppercase">Low-Impedance Breakdown</h3>
+                     <div class="overflow-x-auto">
+                        <table class="data-table w-full text-sm">
+                            <thead><tr><th>ID</th><th>Device</th><th>Cable</th><th>Min Load</th><th>Nom Load</th><th>V Drop</th><th>Loss</th><th>Elec. Loss</th><th>Status</th></tr></thead>
+                            <tbody class="font-mono">
+                                <tr v-for="node in flatLowZList" :key="node.id">
+                                    <td>{{ node.id }}</td><td>{{ getDeviceLabel('speakers', node.speakerModel) }}</td>
+                                    <td class="text-xs text-secondary">{{ node.length }}m <span v-if="node.length2">+ {{ node.length2 }}m</span></td>
+                                    <td>{{ node.results?.minLoad?.toFixed(2) }}Ω</td><td>{{ node.results?.nomLoad?.toFixed(2) }}Ω</td>
+                                    <td>{{ node.results?.dropPercent?.toFixed(2) }}%</td><td>{{ node.results?.powerLoss?.toFixed(1) }}W</td><td>{{ node.results?.splLoss?.toFixed(2) }}dB</td>
+                                    <td><span :class="['badge', getStatusClass(node.results?.status)]">{{ node.results?.status }}</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                     </div>
+                 </div>
+                 <div v-if="flatHighVList.length > 0">
+                     <h3 class="text-sm font-semibold text-secondary mb-4 uppercase">100V System Breakdown</h3>
+                     <div class="overflow-x-auto">
+                        <table class="data-table w-full text-sm">
+                            <thead><tr><th>ID</th><th>Device</th><th>Cable</th><th>Power</th><th>V @ Tap</th><th>Loss</th><th>V @ Speaker</th><th>Status</th></tr></thead>
+                            <tbody class="font-mono">
+                                <tr v-for="node in flatHighVList" :key="node.id">
+                                    <td>{{ node.id }}</td><td>{{ getDeviceLabel('speakers', node.speakerModel) }}</td>
+                                    <td class="text-xs text-secondary">{{ node.length }}m <span v-if="node.length2">+ {{ node.length2 }}m</span></td>
+                                    <td>{{ node.results?.totalPower?.toFixed(1) }}W</td><td>{{ node.results?.voltageAtSpeaker?.toFixed(1) }}V</td>
+                                    <td>{{ node.results?.powerLoss?.toFixed(1) }}W</td><td>{{ node.results?.voltageAtSpeaker?.toFixed(1) }}V</td>
+                                    <td><span :class="['badge', getStatusClass(node.results?.status)]">{{ node.results?.status }}</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                     </div>
+                 </div>
+            </div>
+        </div>
+
+        <div v-if="currentView==='explanations'" class="panel">
+            <div class="prose mx-auto max-w-5xl">
+                <h2 class="text-3xl font-bold mb-8 text-white border-b border-border-subtle pb-4">Technical Deep Dive & Warning System</h2>
+                <section class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-accent-primary">1. The Warning System: Why It Matters</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-bg-input p-6 rounded border-l-4 border-status-danger"><h4 class="text-lg font-bold mb-3 text-white">Dynamic Compression (Voltage Drop)</h4><p class="text-sm text-secondary">A <strong>>10% Voltage Drop</strong> is an Error. It fundamentally limits current delivery during transients.</p></div>
+                        <div class="bg-bg-input p-6 rounded border-l-4 border-status-ok"><h4 class="text-lg font-bold mb-3 text-white">System Health</h4><p class="text-sm text-secondary"><strong>Amp Protection:</strong> Calculating <strong>Min Load (Ω)</strong> prevents short circuits.<br><strong>Saturation:</strong> Low voltage in 100V lines causes transformer saturation.</p></div>
+                    </div>
+                </section>
+                <section>
+                    <h3 class="text-2xl font-semibold mb-6 text-accent-primary">2. Quality Standards Table</h3>
+                    <div class="overflow-x-auto bg-bg-input rounded border border-border-subtle">
+                        <table class="data-table w-full text-sm">
+                            <thead><tr><th>Metric</th><th>Application</th><th>Warning Threshold</th><th>Critical Error</th></tr></thead>
+                            <tbody>
+                                <tr><td class="font-medium">Voltage Drop</td><td>Subwoofers / Main PA</td><td class="text-status-warn">> 2.5%</td><td class="text-status-danger">> 5.0%</td></tr>
+                                <tr><td class="font-medium">Voltage Drop</td><td>Distributed / Satellite</td><td class="text-status-warn">> 5.0%</td><td class="text-status-danger">> 10.0%</td></tr>
+                                <tr><td class="font-medium">Damping Factor</td><td>Low-Z Performance</td><td class="text-status-warn">< 20</td><td class="text-status-danger">< 10</td></tr>
+                                <tr><td class="font-medium">Min Load (Z)</td><td>Amp Loading</td><td class="text-status-warn">Near Limit</td><td class="text-status-danger">Below Rated</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <div v-if="currentView==='manual'" class="panel">
+            <div class="prose mx-auto max-w-4xl">
+                <h2 class="text-2xl font-bold mb-6 text-white border-b border-border-subtle pb-4">User Manual & Workflow</h2>
+                <div class="space-y-10">
+                    <section>
+                        <h3 class="text-xl font-semibold text-accent-primary mb-3">3. Understanding Results</h3>
+                        <table class="data-table w-full text-sm mb-4">
+                            <thead><tr><th>Column</th><th>Description</th></tr></thead>
+                            <tbody>
+                                <tr><td class="font-mono text-accent-primary">Total Power (W)</td><td><strong>(100V Only)</strong> Total Watts load. Keep below Amp Headroom.</td></tr>
+                                <tr><td class="font-mono text-accent-primary">Min Load (Ω)</td><td><strong>(Low-Z Only)</strong> Lowest impedance seen by amp. <strong>Safety Check:</strong> Must be > Amp Minimum.</td></tr>
+                                <tr><td class="font-mono text-accent-primary">V Drop %</td><td>Signal lost in wire. <strong>>5% Warning</strong>, <strong>>10% Error</strong>.</td></tr>
+                            </tbody>
+                        </table>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/x-template" id="tree-node-template">
+        <div class="node-wrapper animate-fade-in">
+            <div class="node-row grid grid-cols-1 md:grid-cols-[70px_1.5fr_2fr_2fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr_100px_40px] gap-2 md:gap-4 items-center p-3 border-b border-border-subtle hover:bg-bg-input transition-colors">
+                <div class="text-mono text-secondary font-bold">{{node.id}}</div>
+                <div><input v-model="node.userLabel" class="table-input" placeholder="Name..."></div>
+                <div><div class="text-primary font-medium text-sm">{{ getLabel('speakers', node.speakerModel) }}</div><div class="text-dim text-xs"><span v-if="!node.parentId">Source: {{ getLabel('amplifiers', node.ampModel) }}</span><span v-else>Source: {{node.parentId}}</span><span class="mx-1">|</span>{{mode==='low-z' ? node.parallelCount+'x Parallel' : node.tapPower+'W Tap'}}</div></div>
+                <div class="text-mono text-xs text-secondary"><div>{{ getLabel('cables', node.cableModel) }} ({{node.length}}m)</div><div v-if="node.cableModel2">+ {{ getLabel('cables', node.cableModel2) }} ({{node.length2}}m)</div></div>
+                <div class="text-mono text-sm"><span class="md:hidden text-xs text-dim mr-2">{{ mode==='low-z'?'Min Z':'Power'}}:</span>{{ mode==='low-z' ? node.results?.minLoad?.toFixed(2) + 'Ω' : node.results?.totalPower?.toFixed(1) + 'W' }}</div>
+                <div class="text-mono text-sm"><span class="md:hidden text-xs text-dim mr-2">Nom Z:</span><span v-if="mode==='low-z'">{{ node.results?.nomLoad?.toFixed(2) }}Ω</span><span v-else class="text-dim">-</span></div>
+                <div :class="['text-mono font-bold text-sm', getStatusClass(node.results?.status)]"><span class="md:hidden text-xs text-dim mr-2">Drop:</span><span v-if="mode==='low-z'">{{node.results?.dropPercent?.toFixed(2)}}%</span><span v-else>{{(node.results?.dropVolts || 0).toFixed(1)}} V</span></div>
+                <div class="text-mono text-secondary text-sm"><span class="md:hidden text-xs text-dim mr-2">Loss:</span>{{node.results?.powerLoss?.toFixed(1)}}W</div>
+                <div class="text-mono text-sm"><span class="md:hidden text-xs text-dim mr-2">Out/Loss:</span><div v-if="mode==='low-z'">{{node.results?.splLoss?.toFixed(2)}}dB</div><div v-else>{{node.results?.voltageAtSpeaker?.toFixed(1)}}V</div></div>
+                <div class="flex flex-col justify-center md:block text-center">
+                    <span :class="['badge', getStatusClass(node.results?.status)]">{{node.results?.status}}</span>
+                    <div v-if="node.results?.status !== 'OK' && node.results?.statusMessage" class="text-[10px] mt-1 text-status-danger font-medium uppercase tracking-wide">{{ node.results.statusMessage.replace('Hazard:', '').replace('Warning:', '').replace('Hazard', 'Error') }}</div>
+                </div>
+                <div class="text-right"><button @click="$emit('delete', node.id)" class="text-status-danger hover:text-white font-bold px-2 text-lg">&times;</button></div>
+            </div>
+            <div v-if="node.children && node.children.length" class="node-child-container border-l border-border-subtle ml-4 md:ml-6 pl-2">
+                <tree-node v-for="c in node.children" :key="c.id" :node="c" :mode="mode" :get-label="getLabel" @delete="$emit('delete', $event)"></tree-node>
+            </div>
+        </div>
+    </script>
+    
+    <footer class="app-footer">
+        <div class="mb-2">App Admin: Sindre Løvlie Haugen | Source Code: <a href="https://github.com/sindrehaugen/SpeakerDesignTool" target="_blank">GitHub</a> | LinkedIn: <a href="https://www.linkedin.com/in/sindrelhaugen/" target="_blank">linkedin.com/in/sindrelhaugen</a></div>
+        <div class="text-[0.65rem] text-dim opacity-70">This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.</div>
+    </footer>
+
+    <script src="database.js"></script><script src="physics.js"></script><script src="app.js"></script>
+</body>
+</html>
