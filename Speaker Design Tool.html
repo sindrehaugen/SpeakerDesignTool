@@ -1,540 +1,654 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speaker Design Tool v1.15</title>
-
+    <title>Speaker Design Tool v2.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
-
     <link rel="stylesheet" href="style.css">
-
-    <script src="database.js"></script>
-    <script src="app.js" defer></script>
 </head>
-
-<body class="bg-gray-100 min-h-screen flex flex-col">
-    <div class="container mx-auto px-4 py-8 flex-grow">
-        <header class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Speaker Design Tool v1.15</h1>
-            <p class="text-gray-600">Professional Audio System Calculator</p>
+<body>
+    <div id="app" class="app-container" v-cloak>
+        <header>
+            <div>
+                <h1 class="text-2xl font-semibold text-white">Speaker Design Tool <span class="text-sm text-secondary font-normal">{{ APP_VERSION }}</span></h1>
+                <p class="text-sm text-secondary">Professional Audio System Calculator</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 bg-panel border border-border-subtle p-2 rounded">
+                    <label class="text-xs text-secondary font-medium uppercase">Ambient Temp</label>
+                    <input type="number" v-model.number="globalSettings.temp_c" class="form-input w-16 text-center !py-1">
+                    <span class="text-xs text-secondary">°C</span>
+                </div>
+            </div>
         </header>
 
-        <nav class="flex flex-wrap space-x-2 sm:space-x-4 mt-4 mb-6" id="nav-buttons">
-            <button data-view="view-calculator" class="nav-btn active">Calculator</button>
-            <button data-view="view-database" class="nav-btn">Database</button>
-            <button data-view="view-report" class="nav-btn">Reports</button>
-            <button data-view="view-explanations" class="nav-btn">Explanations</button>
-            <a href="manual.html" target="_blank" class="nav-btn ml-auto">User Manual</a>
+        <nav class="nav-bar">
+            <button @click="currentView='calculator'" :class="['nav-btn', {active: currentView==='calculator'}]">Calculator</button>
+            <button @click="currentView='database'" :class="['nav-btn', {active: currentView==='database'}]">Database</button>
+            <button @click="currentView='reports'" :class="['nav-btn', {active: currentView==='reports'}]">Reports</button>
+            <button @click="currentView='explanations'" :class="['nav-btn', {active: currentView==='explanations'}]">Explanations</button>
+            <button @click="currentView='manual'" :class="['nav-btn', {active: currentView==='manual'}]">User Manual</button>
         </nav>
 
-        <div id="view-calculator" class="view active">
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <label class="form-label font-semibold text-lg">Project Name</label>
-                <input type="text" id="project-name" class="form-input" value="Untitled Project">
-            </div>
-
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex space-x-4 mb-6" id="calculator-tabs">
-                    <button id="tab-low-z" data-view="calculator-view-low-z" class="db-nav-btn active">Low-Z Calculator</button>
-                    <button id="tab-high-v" data-view="calculator-view-high-v" class="db-nav-btn">100V Calculator</button>
+        <!-- CALCULATOR VIEW -->
+        <div v-if="currentView === 'calculator'">
+            <div class="panel flex flex-col md:flex-row gap-4 items-end mb-4">
+                <div class="flex-grow w-full">
+                    <label class="form-label">Project Name</label>
+                    <input v-model="project.name" class="form-input" placeholder="Enter project name...">
                 </div>
-
-                <div id="calculator-view-low-z" class="db-view active">
-                    <h2 class="text-xl font-semibold mb-4">Low-Impedance Calculator</h2>
-                    <form class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label class="form-label">Select Amplifier (New Line)</label><select id="low-z-amp" class="form-select">
-                                <option value="">-- Select Amplifier --</option>
-                            </select></div>
-                        <div><label class="form-label">Or Select ID (Tap Line)</label><select id="low-z-tap-id" class="form-select">
-                                <option value="">-- Select Tap --</option>
-                            </select></div>
-                        <div><label class="form-label">Select Speaker</label><select id="low-z-speaker" class="form-select">
-                                <option value="">-- Select Speaker --</option>
-                            </select></div>
-                        <div><label class="form-label">Speakers in Parallel</label><input type="number" id="low-z-parallel" class="form-input" value="1" min="1"></div>
-                        <div><label class="form-label">Main Cable Run</label><select id="low-z-cable-1" class="form-select">
-                                <option value="">-- Select Cable --</option>
-                            </select></div>
-                        <div><label class="form-label">Length (m)</label><input type="number" id="low-z-length-1" class="form-input" step="0.1" min="0"></div>
-                        <div><label class="form-label">Final Cable Run (Optional)</label><select id="low-z-cable-2" class="form-select">
-                                <option value="">-- Select Cable --</option>
-                            </select></div>
-                        <div><label class="form-label">Length (m)</label><input type="number" id="low-z-length-2" class="form-input" step="0.1" min="0"></div>
-                        <div class="md:col-span-2"><label class="flex items-center"><input type="checkbox" id="low-z-bridge-mode" class="mr-2"><span>Use Bridge Mode</span></label></div>
-                    </form>
-                    <div class="mt-6 flex flex-wrap gap-4">
-                        <button id="add-low-z-calculation" class="btn btn-primary">Add Calculation</button>
-                        <button id="import-low-z" class="btn btn-secondary">Import CSV</button>
-                        <button id="export-low-z" class="btn btn-secondary">Export CSV</button>
-                        <button id="clear-low-z" class="btn btn-danger">Clear Results</button>
+                <div class="flex gap-2 w-full md:w-auto justify-between md:justify-start">
+                    <div class="flex gap-2">
+                        <button @click="setMode('low-z')" :class="['btn btn-sm', calculatorMode==='low-z'?'btn-primary':'btn-secondary']">Low-Z</button>
+                        <button @click="setMode('high-v')" :class="['btn btn-sm', calculatorMode==='high-v'?'btn-primary':'btn-secondary']">100V</button>
                     </div>
-                    <input type="file" id="import-low-z-file" class="hidden" accept=".csv">
-                    
-                    <div class="mt-8">
-                        <div class="results-grid-header-low-z">
-                            <div class="font-semibold">ID</div>
-                            <div class="font-semibold">Details</div>
-                            <div class="font-semibold">Cable Run (This Leg)</div>
-                            <div class="font-semibold">Load</div>
-                            <div class="font-semibold">Voltage Drop</div>
-                            <div class="font-semibold">Power Loss (W)</div>
-                            <div class="font-semibold">SPL Loss</div>
-                            <div class="font-semibold">Total DF</div>
-                            <div class="font-semibold">Status</div>
-                        </div>
-                        <div id="low-z-results">
-                            </div>
-                    </div>
-                </div>
-
-                <div id="calculator-view-high-v" class="db-view">
-                    <h2 class="text-xl font-semibold mb-4">100V Calculator</h2>
-                    <form class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label class="form-label">Start New Line</label><select id="high-v-amp" class="form-select">
-                                <option value="">-- Select Amplifier --</option>
-                            </select></div>
-                        <div><label class="form-label">Or Select ID (Tap Line)</label><select id="high-v-tap-id" class="form-select">
-                                <option value="">-- Select Tap --</option>
-                            </select></div>
-                        <div><label class="form-label">Select Speaker</label><select id="high-v-speaker" class="form-select">
-                                <option value="">-- Select Speaker --</option>
-                            </select></div>
-                        <div><label class="form-label">Speaker Tap (W)</label><select id="high-v-powertap" class="form-select">
-                                <option value="">-- Select Speaker First --</option>
-                            </select></div>
-                        <div><label class="form-label">Main Cable Run</label><select id="high-v-cable-1" class="form-select">
-                                <option value="">-- Select Cable --</option>
-                            </select></div>
-                        <div><label class="form-label">Length (m)</label><input type="number" id="high-v-length-1" class="form-input" step="0.1" min="0"></div>
-                        <div><label class="form-label">Final Cable Run (Optional)</label><select id="high-v-cable-2" class="form-select">
-                                <option value="">-- Select Cable --</option>
-                            </select></div>
-                        <div><label class="form-label">Length (m)</label><input type="number" id="high-v-length-2" class="form-input" step="0.1" min="0"></div>
-                    </form>
-                    <div class="mt-6 flex flex-wrap gap-4">
-                        <button id="add-high-v-calculation" class="btn btn-primary">Add Calculation</button>
-                        <button id="import-high-v" class="btn btn-secondary">Import CSV</button>
-                        <button id="export-high-v" class="btn btn-secondary">Export CSV</button>
-                        <button id="clear-high-v" class="btn btn-danger">Clear Results</button>
-                    </div>
-                    <input type="file" id="import-high-v-file" class="hidden" accept=".csv">
-                    
-                    <div class="mt-8">
-                        <div class="results-grid-header-high-v">
-                            <div class="font-semibold">ID</div>
-                            <div class="font-semibold">Details</div>
-                            <div class="font-semibold">Cable Run (This Leg)</div>
-                            <div class="font-semibold">Total Power (This Line)</div>
-                            <div class="font-semibold">Voltage at Tap</div>
-                            <div class="font-semibold">Power Loss (W)</div>
-                            <div class="font-semibold">Status</div>
-                        </div>
-                         <div id="high-v-results">
-                            </div>
-                    </div>
+                    <button @click="clearCurrentResults" class="btn btn-danger btn-sm">Clear Results</button>
                 </div>
             </div>
-        </div>
-        
-        <div id="view-database" class="view">
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-2xl font-bold mb-6">Equipment Database</h2>
-                
-                <div class="flex space-x-2 mb-6 border-b border-gray-200" id="database-tabs">
-                    <button id="tab-db-speakers" data-view="db-view-speakers" class="db-nav-btn active">Manage Speakers</button>
-                    <button id="tab-db-cables" data-view="db-view-cables" class="db-nav-btn">Manage Cables</button>
-                    <button id="tab-db-amplifiers" data-view="db-view-amplifiers" class="db-nav-btn">Manage Amplifiers</button>
-                </div>
 
-                <div id="db-view-speakers" class="db-view active">
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="lg:col-span-1">
-                            <h3 class="text-lg font-semibold mb-4">Add / Edit Speaker</h3>
-                            <form id="form-add-speaker" class="space-y-4">
-                                <input type="hidden" id="db-speaker-original-key">
-                                
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div><label class="form-label">* Model (Unique ID)</label><input id="db-speaker-model" type="text" class="form-input" required></div>
-                                    <div><label class="form-label">Brand</label><input id="db-speaker-brand" type="text" class="form-input"></div>
-                                    <div><label class="form-label">* Impedance (Ω)</label><input id="db-speaker-impedance" type="number" class="form-input" required></div>
-                                    <div><label class="form-label">* Wattage (RMS)</label><input id="db-speaker-wattage_rms" type="number" class="form-input" required></div>
-                                    <div><label class="form-label">Wattage (Peak)</label><input id="db-speaker-wattage_peak" type="number" class="form-input"></div>
-                                    <div><label class="form-label">Max SPL (dB)</label><input id="db-speaker-max_spl" type="number" class="form-input"></div>
-                                </div>
-                                <div><label class="form-label">100V Taps (e.g., 60,30,15)</label><input id="db-speaker-taps" type="text" class="form-input"></div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="form-label">Type</label>
-                                        <select id="db-speaker-type" class="form-select">
-                                            <option value="Both">Both</option>
-                                            <option value="Low-Z">Low-Z Only</option>
-                                            <option value="100V">100V Only</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="form-label">* Category</label>
-                                        <select id="db-speaker-category" class="form-select" required>
-                                            <option value="satellite">Satellite</option>
-                                            <option value="small_fullrange">Small Fullrange</option>
-                                            <option value="large_fullrange">Large Fullrange</option>
-                                            <option value="subwoofer">Subwoofer</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <button type="submit" id="btn-add-speaker" class="btn btn-primary w-full">Add Speaker</button>
-                                <button type="button" id="btn-cancel-edit-speaker" class="btn btn-secondary w-full hidden">Cancel Edit</button>
-                            </form>
-                            <h3 class="text-lg font-semibold mb-4 mt-8">Manage Database</h3>
-                             <div class="flex flex-wrap gap-2">
-                                <button id="db-export-speakers" class="btn btn-secondary btn-sm">Export CSV</button>
-                                <button id="db-import-speakers" class="btn btn-secondary btn-sm">Import CSV</button>
-                                <button id="db-clear-speakers" class="btn btn-danger btn-sm">Clear All</button>
-                            </div>
-                            <input type="file" id="import-speaker-file" class="hidden" accept=".csv">
-                        </div>
-                        <div class="lg:col-span-2">
-                            <h3 class="text-lg font-semibold mb-4">Current Speakers</h3>
-                            <div class="overflow-auto max-h-96">
-                                <table class="min-w-full">
-                                    <thead class="sticky top-0 bg-gray-100">
-                                        <tr>
-                                            <th>Model</th><th>Brand</th><th>Imp.</th><th>W (RMS)</th><th>W (Peak)</th>
-                                            <th>SPL</th><th>Taps</th><th>Type</th><th>Category</th><th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="speakers-database-table"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="db-view-cables" class="db-view">
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="lg:col-span-1">
-                            <h3 class="text-lg font-semibold mb-4">Add / Edit Cable</h3>
-                            <form id="form-add-cable" class="space-y-4">
-                                <input type="hidden" id="db-cable-original-key">
-                                <div><label class="form-label">* Name / Gauge (Unique ID)</label><input id="db-cable-name" type="text" class="form-input" placeholder="e.g., 2.5mm²" required></div>
-                                <div><label class="form-label">Brand</label><input id="db-cable-brand" type="text" class="form-input" placeholder="e.g., Generic"></div>
-                                <div><label class="form-label">Model</label><input id="db-cable-model" type="text" class="form-input" placeholder="e.g., Standard OFC"></div>
-                                <div><label class="form-label">* Resistance (Ω/km)</label><input id="db-cable-resistance" type="number" step="0.01" class="form-input" placeholder="e.g., 7.41" required></div>
-                                <button type="submit" id="btn-add-cable" class="btn btn-primary w-full">Add Cable</button>
-                                <button type="button" id="btn-cancel-edit-cable" class="btn btn-secondary w-full hidden">Cancel Edit</button>
-                            </form>
-                            <h3 class="text-lg font-semibold mb-4 mt-8">Manage Database</h3>
-                             <div class="flex flex-wrap gap-2">
-                                <button id="db-export-cables" class="btn btn-secondary btn-sm">Export CSV</button>
-                                <button id="db-import-cables" class="btn btn-secondary btn-sm">Import CSV</button>
-                                <button id="db-clear-cables" class="btn btn-danger btn-sm">Clear All</button>
-                            </div>
-                             <input type="file" id="import-cable-file" class="hidden" accept=".csv">
-                        </div>
-                        <div class="lg:col-span-2">
-                            <h3 class="text-lg font-semibold mb-4">Current Cables</h3>
-                            <div class="overflow-auto max-h-96">
-                                <table class="min-w-full">
-                                    <thead class="sticky top-0 bg-gray-100"><tr><th>Name</th><th>Brand</th><th>Model</th><th>Resistance (Ω/km)</th><th>Actions</th></tr></thead>
-                                    <tbody id="cables-database-table"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="db-view-amplifiers" class="db-view">
-                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="lg:col-span-1">
-                            <h3 class="text-lg font-semibold mb-4">Add / Edit Amplifier</h3>
-                            <form id="form-add-amplifier" class="space-y-4">
-                                <input type="hidden" id="db-amp-original-key">
-                                <div><label class="form-label">* Model (Unique ID)</label><input id="db-amp-model" type="text" class="form-input" required></div>
-                                <div><label class="form-label">Brand</label><input id="db-amp-brand" type="text" class="form-input"></div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div><label class="form-label">* Damping Factor</label><input id="db-amp-df" type="number" class="form-input" required></div>
-                                    <div><label class="form-label">* DF Rated At (Ω)</label><input id="db-amp-df_rated_at" type="number" class="form-input" required></div>
-                                    <div><label class="form-label">* Min Load (Ω)</label><input id="db-amp-min_load" type="number" step="0.1" class="form-input" required></div>
-                                    <div><label class="form-label">* Watt (8Ω)</label><input id="db-amp-watt_8" type="number" class="form-input" required></div>
-                                    <div><label class="form-label">Watt (4Ω)</label><input id="db-amp-watt_4" type="number" class="form-input"></div>
-                                    <div><label class="form-label">Watt (2Ω)</label><input id="db-amp-watt_2" type="number" class="form-input"></div>
-                                    <div><label class="form-label">W (1ch, 100V)</label><input id="db-amp-watt_100v" type="number" class="form-input"></div>
-                                    <div><label class="form-label">Min Load (Bridge)</label><input id="db-amp-min_load_bridge" type="number" step="0.1" class="form-input"></div>
-                                    <div><label class="form-label">W (Bridge 8Ω)</label><input id="db-amp-watt_bridge_8" type="number" class="form-input"></div>
-                                    <div><label class="form-label">W (Bridge 4Ω)</label><input id="db-amp-watt_bridge_4" type="number" class="form-input"></div>
-                                </div>
-                                <button type="submit" id="btn-add-amplifier" class="btn btn-primary w-full">Add Amplifier</button>
-                                <button type="button" id="btn-cancel-edit-amplifier" class="btn btn-secondary w-full hidden">Cancel Edit</button>
-                            </form>
-                            <h3 class="text-lg font-semibold mb-4 mt-8">Manage Database</h3>
-                             <div class="flex flex-wrap gap-2">
-                                <button id="db-export-amps" class="btn btn-secondary btn-sm">Export CSV</button>
-                                <button id="db-import-amps" class="btn btn-secondary btn-sm">Import CSV</button>
-                                <button id="db-clear-amps" class="btn btn-danger btn-sm">Clear All</button>
-                            </div>
-                             <input type="file" id="import-amp-file" class="hidden" accept=".csv">
-                        </div>
-                        <div class="lg:col-span-2">
-                            <h3 class="text-lg font-semibold mb-4">Current Amplifiers</h3>
-                            <div class="overflow-auto max-h-96">
-                                <table class="min-w-full">
-                                    <thead class="sticky top-0 bg-gray-100">
-                                        <tr>
-                                            <th>Model</th><th>Brand</th><th>DF</th><th>DF @</th><th>Min Load</th>
-                                            <th>W (8Ω)</th><th>W (4Ω)</th><th>W (2Ω)</th><th>W (100V)</th>
-                                            <th>Min (Bridge)</th><th>W (B-8Ω)</th><th>W (B-4Ω)</th><th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="amplifiers-database-table"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-        <div id="view-report" class="view">
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-2xl font-bold mb-6">System Report</h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 border rounded-lg">
-                    <div><label class="form-label">Company Name</label><input type="text" id="report-company-name" class="form-input" placeholder="Your Company Name"></div>
-                    <div><label class="form-label">Project Name</label><input type="text" id="report-project-name" class="form-input" placeholder="e.g., Main Hall Install"></div>
-                    <div><label class="form-label">System Designer</label><input type="text" id="report-designer-name" class="form-input" placeholder="e.g., Jane Doe"></div>
-                </div>
-                
-                <div class="space-y-4">
-                    <div class="flex space-x-4">
-                        <button id="generate-pdf" class="btn btn-primary">Generate PDF Report</button>
-                        <button id="export-combined-csv" class="btn btn-secondary">Export All as CSV</button>
-                    </div>
-                    
-                    <div id="report-content"></div>
-                    
-                    <div class="mt-8 border-t pt-8">
-                        <h3 class="text-xl font-semibold mb-4">Detailed Calculation Tables</h3>
+            <div class="panel">
+                <h3 class="text-sm font-semibold text-accent-primary mb-4 uppercase">
+                    Add {{ calculatorMode === 'low-z' ? 'Low-Impedance' : '100V' }} Connection
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <!-- Source Selection -->
+                    <div class="md:col-span-1">
+                        <label class="form-label">Source (Parent)</label>
+                        <select v-model="inputForm.parentId" class="form-select mb-2">
+                            <option :value="null">Start New Line (Amp)</option>
+                            <option v-for="n in flatNodeList" :value="n.id">{{n.id}} ({{n.speakerModel}})</option>
+                        </select>
                         
-                        <div class="mb-8">
-                            <h4 class="text-lg font-medium mb-2 text-gray-700">Low-Impedance Calculations</h4>
-                            <div id="low-z-calculations-list"></div>
+                        <!-- Amp Selector (Only if New Line) -->
+                        <div v-if="!inputForm.parentId" class="p-3 bg-bg-app rounded border border-border-subtle animate-fade-in">
+                            <label class="form-label text-[10px] mb-1">Select Amplifier</label>
+                            <select v-model="inputForm.ampModel" class="form-select text-xs mb-2">
+                                <option value="">-- Select --</option>
+                                <option v-for="a in ampOptions" :value="a.id">{{a.label}}</option>
+                            </select>
+                            <div v-if="calculatorMode === 'low-z'" class="flex items-center gap-2">
+                                <input type="checkbox" v-model="inputForm.useBridgeMode" id="bridgeCheck">
+                                <label for="bridgeCheck" class="text-xs text-secondary cursor-pointer">Bridge Mode</label>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- Speaker Selection -->
+                    <div class="md:col-span-1">
+                        <label class="form-label">Speaker</label>
+                        <select v-model="inputForm.speakerModel" class="form-select mb-2">
+                            <option value="">-- Select Speaker --</option>
+                            <option v-for="s in speakerOptions" :value="s.id">{{s.label}}</option>
+                        </select>
                         
+                        <div v-if="calculatorMode==='low-z'">
+                            <label class="form-label">Quantity (Parallel)</label>
+                            <input type="number" v-model.number="inputForm.parallelCount" class="form-input" min="1">
+                        </div>
+                        <div v-else>
+                            <label class="form-label">Power Tap (W)</label>
+                            <select v-model.number="inputForm.tapPower" class="form-select">
+                                <option v-for="t in getSpeakerTaps(inputForm.speakerModel)" :value="t">{{t}} W</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Acoustic Info -->
+                    <div class="md:col-span-1">
+                         <label class="form-label text-highlight-blue">Listener Dist (m)</label>
+                         <input type="number" v-model.number="inputForm.listenerDistance" class="form-input" placeholder="e.g. 10" min="1">
+                         <p class="text-[10px] text-dim mt-1">Calculates SPL loss & Delay</p>
+                    </div>
+
+                    <!-- Cable Selection -->
+                    <div class="md:col-span-2">
+                        <div class="mb-2">
+                            <label class="form-label">Main Cable Run</label>
+                            <div class="flex gap-1">
+                                <select v-model="inputForm.cableModel" class="form-select text-xs flex-grow">
+                                    <option value="">-- Select Cable --</option>
+                                    <option v-for="c in cableOptions" :value="c.id">{{c.label}}</option>
+                                </select>
+                                <input type="number" v-model.number="inputForm.length" class="form-input w-16 text-center" placeholder="m" min="0">
+                            </div>
+                        </div>
                         <div>
-                            <h4 class="text-lg font-medium mb-2 text-gray-700">100V Calculations</h4>
-                            <div id="high-v-calculations-list"></div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="form-label !mb-0">Final Cable (Opt)</label>
+                                <button @click="inputForm.hasTapCable=!inputForm.hasTapCable" class="text-xs text-status-info hover:underline">
+                                    {{inputForm.hasTapCable ? 'Remove' : 'Add'}}
+                                </button>
+                            </div>
+                            <div v-if="inputForm.hasTapCable" class="flex gap-1 animate-fade-in">
+                                <select v-model="inputForm.cableModel2" class="form-select text-xs flex-grow">
+                                    <option value="">-- Select Cable --</option>
+                                    <option v-for="c in cableOptions" :value="c.id">{{c.label}}</option>
+                                </select>
+                                <input type="number" v-model.number="inputForm.length2" class="form-input w-16 text-center" placeholder="m" min="0">
+                            </div>
                         </div>
+                    </div>
+                    
+                    <!-- Action -->
+                    <div class="flex items-end md:col-span-5">
+                        <button @click="addNode" class="btn btn-primary w-full h-[42px]">Add Calculation</button>
                     </div>
                 </div>
             </div>
-        </div>
-        <div id="view-explanations" class="view">
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-2xl font-bold mb-6">Technical Explanations & Theory</h2>
-                
-                <div class="space-y-6 mb-8">
-                    <h3 class="text-xl font-semibold mb-4">Theory & Standards</h3>
-                    
-                    <div class="elaboration-box">
-                        <h5>Low-Z: Voltage Drop Standards</h5>
-                        <p>Voltage Drop is the percentage of power lost as heat in the cable. This loss is inaudible up to a point, but excessive loss can lower volume and overheat cables. The standards used in this tool are based on speaker category:</p>
-                        <ul class="list-disc list-inside ml-4 mt-2">
-                            <li><strong>Subwoofers & Large Fullrange:</strong> Require high power.
-                                <br><strong>Warning: > 2.5%</strong> | <strong>Hazard: > 5%</strong></li>
-                            <li><strong>Satellites & Small Fullrange:</strong> Less critical.
-                                <br><strong>Warning: > 5%</strong> | <strong>Hazard: > 10%</strong></li>
-                        </ul>
-                    </div>
-                    
-                     <div class="elaboration-box">
-                        <h5>Low-Z: Damping Factor (DF)</h5>
-                        <p>Damping Factor is a measure of the amplifier's ability to control the movement of the speaker cone. It is the ratio of the speaker's impedance to the *total* resistance in the line (Amp Output + Cable Resistance).</p>
-                        <ul class="list-disc list-inside ml-4 mt-2">
-                            <li><strong>High DF (> 20):</strong> Good. The amp has tight control, resulting in a "tight" and accurate bass response.</li>
-                            <li><strong>Low DF (< 20):</strong> Warning. The amp has less control, which can result in a "muddy" or "boomy" bass sound.</li>
-                            <li><strong>Very Low DF (< 10):</strong> Hazard. The sound quality will be significantly degraded.</li>
-                        </ul>
-                        <p class="mt-2">High voltage drop is caused by high cable resistance, and <strong>high cable resistance mathematically guarantees a low Damping Factor</strong>. This is the main reason why warnings for subs are so strict.</p>
-                    </div>
 
-                    <div class="elaboration-box">
-                        <h5 class="text-lg">The Real-World Impact of Voltage Drop</h5>
-                        <p>Voltage drop isn't just a number; it's a direct measure of how much power you are wasting as heat in the cable instead of as sound from the speaker. This "power loss" has four main negative effects:</p>
+            <div class="panel" style="padding:0; overflow:hidden;">
+                <div class="results-header hidden md:grid">
+                    <div>ID</div>
+                    <div>Details</div>
+                    <div>Cable / Dist</div>
+                    <div>{{ calculatorMode === 'low-z' ? 'Load (Z)' : 'Total Power' }}</div>
+                    <div>{{ calculatorMode === 'low-z' ? 'V Drop %' : 'V Drop V' }}</div>
+                    <div>P Loss</div>
+                    <div>{{ calculatorMode === 'low-z' ? 'SPL @ Ear' : 'V @ Tap' }}</div>
+                    <div>Delay Time</div>
+                    <div>Status</div>
+                    <div></div>
+                </div>
+                <div class="tree-container">
+                    <tree-node 
+                        v-for="node in activeRootNodes" 
+                        :key="node.id" 
+                        :node="node" 
+                        :mode="calculatorMode" 
+                        @delete="deleteNode">
+                    </tree-node>
+                </div>
+                <div v-if="activeRootNodes.length===0" class="p-12 text-center text-secondary italic">
+                    No {{ calculatorMode === 'low-z' ? 'Low-Impedance' : '100V' }} calculations yet.
+                </div>
+            </div>
+        </div>
+
+        <!-- DATABASE VIEW -->
+        <div v-if="currentView==='database'" class="panel">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-border-subtle pb-4">
+                <h2 class="text-lg font-semibold text-white">Equipment Database</h2>
+                <div class="flex gap-2 mt-2 md:mt-0">
+                    <button @click="dbTab='speakers'" :class="['btn btn-sm', dbTab==='speakers'?'btn-primary':'btn-secondary']">Speakers</button>
+                    <button @click="dbTab='cables'" :class="['btn btn-sm', dbTab==='cables'?'btn-primary':'btn-secondary']">Cables</button>
+                    <button @click="dbTab='amplifiers'" :class="['btn btn-sm', dbTab==='amplifiers'?'btn-primary':'btn-secondary']">Amplifiers</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Editor Form -->
+                <div class="lg:col-span-1 bg-bg-input p-4 rounded border border-border-subtle h-fit">
+                    <h3 class="text-sm font-semibold mb-4 text-accent-primary">{{ dbEditMode ? 'Edit' : 'Add New' }} {{ dbTab.slice(0,-1) }}</h3>
+                    
+                    <form @submit.prevent="saveDbItem" class="space-y-3">
+                        <!-- Common Fields -->
+                        <div>
+                            <label class="form-label">* Model Name (ID)</label>
+                            <input v-model="dbForm.id" class="form-input" :disabled="dbEditMode" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Brand</label>
+                            <input v-model="dbForm.brand" class="form-input">
+                        </div>
+
+                        <!-- Speaker Specific -->
+                        <div v-if="dbTab==='speakers'" class="space-y-3 animate-fade-in">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div><label class="form-label">Impedance (Ω)</label><input v-model.number="dbForm.impedance" type="number" step="0.1" class="form-input"></div>
+                                <div><label class="form-label">W (RMS)</label><input v-model.number="dbForm.wattage_rms" type="number" class="form-input"></div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div><label class="form-label">Max SPL (1m)</label><input v-model.number="dbForm.max_spl" type="number" class="form-input"></div>
+                                <div><label class="form-label">W (Peak)</label><input v-model.number="dbForm.wattage_peak" type="number" class="form-input"></div>
+                            </div>
+                            <div>
+                                <label class="form-label">100V Taps (comma separated)</label>
+                                <input v-model="dbForm.taps" class="form-input" placeholder="e.g. 60,30,15">
+                            </div>
+                            <div>
+                                <label class="form-label">Category</label>
+                                <select v-model="dbForm.category" class="form-select">
+                                    <option value="satellite">Satellite</option>
+                                    <option value="small_fullrange">Small Fullrange</option>
+                                    <option value="large_fullrange">Large Fullrange</option>
+                                    <option value="subwoofer">Subwoofer</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Cable Specific -->
+                        <div v-if="dbTab==='cables'" class="space-y-3 animate-fade-in">
+                            <div><label class="form-label">Resistance (Ω/km)</label><input v-model.number="dbForm.resistance" type="number" step="0.01" class="form-input" required></div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div><label class="form-label">Capacitance (pF/m)</label><input v-model.number="dbForm.capacitance" type="number" class="form-input"></div>
+                                <div><label class="form-label">Inductance (µH/m)</label><input v-model.number="dbForm.inductance" type="number" step="0.01" class="form-input"></div>
+                            </div>
+                        </div>
+
+                        <!-- Amp Specific -->
+                        <div v-if="dbTab==='amplifiers'" class="space-y-3 animate-fade-in">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div><label class="form-label">W (8Ω)</label><input v-model.number="dbForm.watt_8" type="number" class="form-input"></div>
+                                <div><label class="form-label">W (4Ω)</label><input v-model.number="dbForm.watt_4" type="number" class="form-input"></div>
+                            </div>
+                            <div><label class="form-label">W (100V)</label><input v-model.number="dbForm.watt_100v" type="number" class="form-input"></div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div><label class="form-label">Damping Factor</label><input v-model.number="dbForm.df" type="number" class="form-input"></div>
+                                <div><label class="form-label">Min Load (Ω)</label><input v-model.number="dbForm.min_load" type="number" step="0.1" class="form-input"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary flex-grow">{{ dbEditMode ? 'Save Changes' : 'Add Item' }}</button>
+                            <button type="button" v-if="dbEditMode" @click="resetDbForm" class="btn btn-secondary">Cancel</button>
+                        </div>
+                    </form>
+
+                    <div class="mt-6 pt-6 border-t border-border-subtle">
+                        <h4 class="text-xs font-semibold text-secondary mb-2 uppercase">Data Tools</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <button @click="triggerDbImport" class="btn btn-sm btn-secondary">Import CSV</button>
+                            <button @click="exportDbCsv" class="btn btn-sm btn-secondary">Export CSV</button>
+                            <button @click="resetDbDefaults" class="btn btn-sm btn-danger">Reset Defaults</button>
+                        </div>
+                        <!-- FIX: Added ref for Vue handling -->
+                        <input type="file" ref="dbImportInput" class="hidden" accept=".csv" @change="handleDbImport">
+                    </div>
+                </div>
+
+                <!-- Data List -->
+                <div class="lg:col-span-2 overflow-y-auto max-h-[600px]">
+                    <table class="data-table w-full">
+                        <thead>
+                            <tr>
+                                <th>Model / ID</th>
+                                <th>Brand</th>
+                                <th>Specs</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(item, key) in currentDbData" :key="key">
+                                <td class="font-medium text-white">{{ key }}</td>
+                                <td class="text-secondary">{{ item.brand }}</td>
+                                <td class="text-xs text-dim">
+                                    <span v-if="dbTab==='speakers'">{{item.impedance}}Ω, {{item.wattage_rms}}W</span>
+                                    <span v-if="dbTab==='cables'">{{item.resistance}}Ω/km</span>
+                                    <span v-if="dbTab==='amplifiers'">{{item.watt_8}}W@8Ω, DF:{{item.df}}</span>
+                                </td>
+                                <td>
+                                    <div class="flex gap-1">
+                                        <button @click="editDbItem(key)" class="text-status-info hover:text-white px-2" title="Edit">✎</button>
+                                        <button @click="deleteDbItem(dbTab, key)" class="text-status-danger hover:text-white px-2" title="Delete">&times;</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- EXPLANATIONS VIEW -->
+        <div v-if="currentView==='explanations'" class="panel">
+            <div class="prose mx-auto max-w-5xl">
+                <h2 class="text-3xl font-bold mb-8 text-white border-b border-border-subtle pb-4">Technical Reference & Best Practices</h2>
+                
+                <!-- ELECTRICAL -->
+                <section class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-accent-primary">1. Electrical Behaviour & Power Quality</h3>
+                    <p class="mb-6 text-secondary">The quality of an audio system is fundamentally limited by its electrical transmission backbone. Understanding the relationship between voltage, impedance, and damping is crucial for ensuring system performance.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-bg-input p-6 rounded border-l-4 border-status-info">
+                            <h4 class="text-lg font-bold mb-3 text-white">Voltage Drop: A Power Problem</h4>
+                            <p class="text-sm text-secondary mb-3">Voltage drop is not just a signal loss; it is a <strong>power loss</strong> ($P = V^2 / Z$). Because power scales with the square of voltage, a small voltage drop results in a disproportionately large loss of amplifier headroom.</p>
+                            <div class="font-mono text-xs bg-bg-app p-3 rounded mb-3 border border-border-subtle">
+                                Power Loss (%) = 1 - (V_load / V_source)²
+                            </div>
+                            <div class="text-sm text-secondary mt-3">
+                                <strong>Real-World Impact:</strong>
+                                <ul class="list-disc list-inside pl-2 mt-1">
+                                    <li>Reduced SPL output</li>
+                                    <li>Loss of dynamic impact ("punch")</li>
+                                    <li>Increased amplifier heat dissipation</li>
+                                </ul>
+                            </div>
+                        </div>
                         
-                        <h6 class="font-semibold mt-3 mb-1">1. It's a POWER Problem, not a Voltage Problem</h6>
-                        <p>This is the most critical concept. Power $P = V^2/Z$. Because power is proportional to the *square* of the voltage, a small voltage drop causes a much larger power loss.</p>
-                        <ul class="list-disc list-inside ml-4 mt-2">
-                            <li>A <strong>10% Voltage Drop</strong> means <strong>19% of your amp's power is lost</strong> (0.90 * 0.90 = 0.81).</li>
-                            <li>A <strong>15% Voltage Drop</strong> means <strong>28% of your amp's power is lost</strong> (0.85 * 0.85 = 0.72).</li>
-                        </ul>
-
-                        <h6 class="font-semibold mt-3 mb-1">2. Loss of Dynamics (Crest Factor)</h6>
-                        <p>Music is not a constant tone; it's dynamic, with quiet parts and loud, sharp peaks (like a snare hit or cymbal crash). This is the "crest factor." These peaks demand huge, short-term bursts of *current* from the amplifier. High cable resistance (which causes voltage drop) *chokes* this current. The voltage "sags" during the peak, and the peak gets "squashed." This is <strong>dynamic compression</strong>. The system sounds flat, dull, and lifeless because the sharp, exciting parts of the music are being filtered out by the wire.</p>
-
-                        <h6 class="font-semibold mt-3 mb-1">3. Amplifier Strain & Premature Limiting</h6>
-                        <p>Your amplifier has to work harder to overcome the cable resistance, wasting a large portion of its power as heat in the cable. Furthermore, an amplifier's built-in <strong>limiters</strong> are designed to protect it from dangerous conditions. High cable resistance can cause the amp to hit its protection limits (either voltage or current limiting) *prematurely*. The amp will "clip" or "limit" the signal long before the speaker reaches its full potential. You've paid for a 500W amplifier but the cable is forcing it to act like a 300W amplifier.</p>
-
-                        <h6 class="font-semibold mt-3 mb-1">4. Voltage Drop Profile (What You Hear)</h6>
-                        <ul class="list-disc list-inside ml-4 mt-2">
-                            <li><strong>2.5% VD (-0.22 dB):</strong> The professional limit for subwoofers. This loss is inaudible, but ensures the Damping Factor remains high and the bass stays "tight."</li>
-                            <li><strong>5.0% VD (-0.45 dB):</strong> The warning limit for satellites. This is the point where the SPL loss is just becoming perceptible to the human ear. Dynamics are slightly reduced.</li>
-                            <li><strong>7.5% VD (-0.68 dB):</strong> Clearly audible volume loss. Bass response is noticeably "looser" or "muddier" due to the compromised Damping Factor.</li>
-                            <li><strong>10.0% VD (-0.91 dB):</strong> <span class="badge badge-yellow">Hazard Level</span>. Nearly 20% of your amp power is gone. Dynamic peaks are audibly "squashed." The system sounds strained.</li>
-                            <li><strong>15.0% VD (-1.41 dB):</strong> <span class="badge badge-red">Critical Failure</span>. Nearly 30% of your power is lost. The sound is heavily compressed, the amp is at risk of overheating, and the bass is likely "boomy" and uncontrolled.</li>
-                        </ul>
+                        <div class="bg-bg-input p-6 rounded border-l-4 border-status-ok">
+                            <h4 class="text-lg font-bold mb-3 text-white">Damping Factor (DF)</h4>
+                            <p class="text-sm text-secondary mb-3">Damping Factor measures the amplifier's ability to control the speaker cone's motion, particularly the "braking" after a bass transient. High cable resistance destroys DF.</p>
+                            <div class="font-mono text-xs bg-bg-app p-3 rounded mb-3 border border-border-subtle">
+                                DF_system = Z_speaker / (Z_amp_out + R_cable_total)
+                            </div>
+                            <p class="text-sm text-secondary mt-3"><strong>Impact:</strong> Low DF results in "muddy," "boomy," or "uncontrolled" bass response. For subwoofers, maintain DF > 20.</p>
+                        </div>
                     </div>
-        
-                     <div class="elaboration-box">
-                        <h5>High-V (100V): Voltage & Power Standards</h5>
-                        <p>100V systems work by using a high voltage to send audio over long distances, which is "stepped down" by a transformer at each speaker. The main concern is ensuring the voltage at the speaker's transformer is high enough to work properly.</p>
-                        <ul class="list-disc list-inside ml-4 mt-2">
-                            <li><strong>Warning (< 95V):</strong> The voltage is dropping. This causes a minor, often inaudible, loss of volume.</li>
-                            <li><strong>Hazard (< 90V):</strong> The voltage is too low. The speaker's transformer may "saturate," which can cause distortion, overheating, and damage to both the speaker and the amplifier.</li>
-                            <li><strong>Amplifier Headroom:</strong> It is standard practice to leave 10-20% headroom on the amplifier. This tool will show a <strong>Warning</strong> if your total power is > 90% of the amp's 100V rating and a <strong>Hazard</strong> if it is > 100%.</li>
+
+                    <div class="mt-8">
+                         <h4 class="text-lg font-bold mb-3 text-white">Real-World Physics</h4>
+                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                             <div class="formula-box">
+                                 <span class="var block font-bold text-accent-primary mb-1">Crest Factor</span>
+                                 <p class="text-xs text-secondary">Music has high peaks (12-20dB). Resistance chokes the current required for these peaks, causing dynamic compression.</p>
+                             </div>
+                             <div class="formula-box">
+                                 <span class="var block font-bold text-accent-primary mb-1">Thermal Derating</span>
+                                 <span class="italic text-xs text-dim block mb-2">Resistance rises with heat</span>
+                                 <code>R_{hot} = R_{20} \cdot (1 + 0.00393 \cdot (T - 20))</code>
+                             </div>
+                             <div class="formula-box">
+                                 <span class="var block font-bold text-accent-primary mb-1">AC Impedance (Z)</span>
+                                 <span class="italic text-xs text-dim block mb-2">Vector sum of R & Inductance</span>
+                                 <code>Z = \sqrt{R_{hot}^2 + (2\pi f L)^2}</code>
+                             </div>
+                         </div>
+                    </div>
+                </section>
+
+                <!-- ACOUSTIC -->
+                <section class="mb-12">
+                    <h3 class="text-2xl font-semibold mb-6 text-accent-primary">2. Acoustic Behaviour & Propagation</h3>
+                    <p class="mb-6 text-secondary">Designing the electrical signal path is only half the battle. We must also ensure the sound physically reaches the listener with adequate pressure and timing.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                         <div>
+                             <h4 class="text-lg font-bold mb-3 text-white">Inverse Square Law</h4>
+                             <p class="text-sm text-secondary mb-3">In a free field, sound pressure level (SPL) drops by **6 dB** for every doubling of distance from a point source.</p>
+                             <div class="font-mono text-xs bg-bg-app p-3 rounded border border-border-subtle mt-3">
+                                 SPL_{dist} = SPL_{1m} - 20 \cdot \log_{10}(Distance)
+                             </div>
+                             <p class="text-xs text-dim mt-2">Note: Indoors, reverberation field will mitigate this loss at critical distance.</p>
+                         </div>
+                         <div>
+                             <h4 class="text-lg font-bold mb-3 text-white">Time Alignment & Delay</h4>
+                             <p class="text-sm text-secondary mb-3">Sound travels slowly ($c \approx 343 m/s$). In distributed systems, delay lines must be used to ensure sound from distant speakers arrives at the listener simultaneously with sound from the main stage to preserve intelligibility (Haas Effect).</p>
+                             <div class="font-mono text-xs bg-bg-app p-3 rounded border border-border-subtle mt-3">
+                                 Delay_{ms} = (Distance / c) \cdot 1000
+                             </div>
+                             <p class="text-xs text-dim mt-2">Speed of sound ($c$) is automatically adjusted for the Ambient Temperature setting.</p>
+                         </div>
+                    </div>
+                </section>
+
+                <!-- QUALITY -->
+                <section>
+                    <h3 class="text-2xl font-semibold mb-6 text-accent-primary">3. Quality Standards & Thresholds</h3>
+                    <div class="overflow-x-auto bg-bg-input rounded border border-border-subtle">
+                        <table class="data-table w-full text-sm">
+                            <thead>
+                                <tr><th class="w-1/4">Metric</th><th class="w-1/4">Application</th><th class="w-1/4">Warning Threshold</th><th class="w-1/4">Critical Hazard</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="font-medium">Voltage Drop</td><td>Subwoofers / Main PA</td><td class="text-status-warn">> 2.5%</td><td class="text-status-danger">> 5.0%</td></tr>
+                                <tr><td class="font-medium">Voltage Drop</td><td>Distributed / Satellite</td><td class="text-status-warn">> 5.0%</td><td class="text-status-danger">> 10.0%</td></tr>
+                                <tr><td class="font-medium">Damping Factor</td><td>Low-Z Performance</td><td class="text-status-warn">< 20</td><td class="text-status-danger">< 10</td></tr>
+                                <tr><td class="font-medium">100V Line Voltage</td><td>Distributed Audio</td><td class="text-status-warn">< 95V</td><td class="text-status-danger">< 90V</td></tr>
+                                <tr><td class="font-medium">HF Loss</td><td>Full Range Music</td><td class="text-status-warn">> 0.5 dB @ 10kHz</td><td class="text-status-danger">> 3.0 dB @ 10kHz</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                
+                <div class="mt-10 border-t border-border-subtle pt-6">
+                     <h3 class="text-xl font-semibold mb-4 text-white">Detailed Voltage Drop Profile</h3>
+                     <ul class="list-disc list-inside space-y-2 text-secondary text-sm">
+                         <li><strong>2.5% VD (-0.22 dB):</strong> Pro limit for subwoofers. Inaudible loss, tight bass.</li>
+                         <li><strong>5.0% VD (-0.45 dB):</strong> Warning limit for satellites. Just perceptible.</li>
+                         <li><strong>7.5% VD (-0.68 dB):</strong> Clearly audible volume loss. Bass becomes "loose".</li>
+                         <li><strong>10.0% VD (-0.91 dB):</strong> Hazard level. Nearly 20% power loss. Dynamics are "squashed".</li>
+                         <li><strong>15.0% VD (-1.41 dB):</strong> Critical failure. Nearly 30% power loss. Risk of amp overheating.</li>
+                     </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- MANUAL VIEW -->
+        <div v-if="currentView==='manual'" class="panel">
+            <div class="prose mx-auto max-w-4xl">
+                <h2 class="text-2xl font-bold mb-6 text-white">User Manual</h2>
+                
+                <div class="space-y-8">
+                    <section>
+                        <h3 class="text-lg font-semibold text-accent-primary mb-2">1. Introduction</h3>
+                        <p class="text-secondary">The Speaker Design Tool is a Single Page Application (SPA) designed for offline-capable professional audio calculations. All project data is stored persistently in your browser's Local Storage.</p>
+                    </section>
+                    
+                    <section>
+                        <h3 class="text-lg font-semibold text-accent-primary mb-2">2. Workflow: Building a System</h3>
+                        <ol class="list-decimal list-inside space-y-3 ml-2 text-secondary">
+                            <li>
+                                <strong class="text-white">Select Topology:</strong> Toggle between <strong>Low-Z</strong> (Standard 2-8Ω amps) or <strong>100V</strong> (Constant Voltage / High-Z) modes. Each mode maintains its own independent calculation tree.
+                            </li>
+                            <li>
+                                <strong class="text-white">Define the Root:</strong> In the "Source" dropdown, select "Start New Line". Then, select your Amplifier model. This establishes the power and output impedance baseline.
+                            </li>
+                            <li>
+                                <strong class="text-white">Add Speakers:</strong> Select a speaker model and the cable type.
+                                <ul class="list-disc list-inside ml-6 mt-1 text-sm text-dim">
+                                    <li><strong>Main Cable:</strong> The run from the source (Amp or Previous Speaker) to the junction point.</li>
+                                    <li><strong>Final Cable (Opt):</strong> A shorter "whip" or "drop" cable from the junction to the actual speaker terminal.</li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong class="text-white">Daisy Chaining:</strong> To continue a line, add a new calculation and set the "Source" to the ID of the previous speaker (e.g., "L-1"). The tool automatically calculates the cumulative load and voltage drop upstream.
+                            </li>
+                            <li>
+                                <strong class="text-white">Listener Data:</strong> Enter the "Listener Distance" to enable acoustic SPL estimates and delay time calculations.
+                            </li>
+                        </ol>
+                    </section>
+
+                    <section>
+                        <h3 class="text-lg font-semibold text-accent-primary mb-2">3. Managing Equipment</h3>
+                        <p class="text-secondary mb-2">The <strong>Database</strong> tab is your inventory manager.</p>
+                        <ul class="list-disc list-inside ml-2 text-secondary space-y-2">
+                            <li><strong>Manual Entry:</strong> Use the form on the left to input specs from manufacturer datasheets. Critical fields like Impedance ($Z$) and Damping Factor ($DF$) are required for accurate math.</li>
+                            <li><strong>CSV Import:</strong> You can bulk import data using standard CSV files. The importer is case-insensitive and robust.
+                                <div class="mt-2 bg-bg-app p-2 rounded text-xs font-mono text-dim">
+                                    Required Headers: model, brand, impedance, wattage_rms...
+                                </div>
+                            </li>
+                            <li><strong>Persistence:</strong> Your database is saved automatically. Use "Export CSV" to create a backup file for sharing between computers.</li>
                         </ul>
+                    </section>
+
+                    <section>
+                        <h3 class="text-lg font-semibold text-accent-primary mb-2">4. Generating Reports</h3>
+                        <p class="text-secondary">The <strong>Reports</strong> tab aggregates all data into a project overview.</p>
+                        <ul class="list-disc list-inside ml-2 text-secondary">
+                            <li><strong>Dashboard:</strong> View real-time totals for power consumption and active hazard alerts.</li>
+                            <li><strong>Bill of Materials (BOM):</strong> The PDF generator automatically counts every amp, speaker, and meter of cable to create a pick-list.</li>
+                            <li><strong>PDF Export:</strong> Click "Generate PDF" to download a formatted, client-ready report containing the project summary, BOM, and detailed technical breakdown of every node.</li>
+                        </ul>
+                    </section>
+                </div>
+            </div>
+        </div>
+        
+        <!-- REPORTS VIEW -->
+        <div v-if="currentView==='reports'" class="panel">
+            <h2 class="text-xl font-semibold mb-6 text-white">System Health Report</h2>
+            
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="p-4 rounded bg-bg-input border border-border-subtle">
+                    <div class="text-3xl font-bold text-white">{{ reportSummary.totalNodes }}</div>
+                    <div class="text-xs uppercase text-secondary font-bold mt-1">Total Nodes</div>
+                </div>
+                <div class="p-4 rounded bg-bg-input border border-border-subtle">
+                    <div class="text-3xl font-bold text-status-ok">{{ reportSummary.totalPower.toFixed(0) }} W</div>
+                    <div class="text-xs uppercase text-secondary font-bold mt-1">Total Power</div>
+                </div>
+                <div class="p-4 rounded bg-bg-input border border-border-subtle">
+                    <div class="text-3xl font-bold text-status-warn">{{ reportSummary.warnings }}</div>
+                    <div class="text-xs uppercase text-secondary font-bold mt-1">Warnings</div>
+                </div>
+                <div class="p-4 rounded bg-bg-input border border-border-subtle">
+                    <div class="text-3xl font-bold text-status-danger">{{ reportSummary.hazards }}</div>
+                    <div class="text-xs uppercase text-secondary font-bold mt-1">Hazards</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <label class="form-label">Company Name</label>
+                    <input v-model="reportForm.company" class="form-input" placeholder="Your Company Name">
+                </div>
+                <div>
+                    <label class="form-label">System Designer</label>
+                    <input v-model="reportForm.designer" class="form-input" placeholder="Your Name">
+                </div>
+            </div>
+
+            <button @click="generatePdf" class="btn btn-primary w-full md:w-auto flex items-center justify-center gap-2">
+                <span class="text-lg">📄</span> Generate PDF Report
+            </button>
+            
+            <!-- Detailed Breakdown Tables -->
+            <div class="mt-8 pt-6 border-t border-border-subtle space-y-8">
+                 
+                 <!-- Low-Z Table -->
+                 <div v-if="flatLowZList.length > 0">
+                     <h3 class="text-sm font-semibold text-secondary mb-4 uppercase">Low-Impedance Breakdown</h3>
+                     <div class="overflow-x-auto">
+                        <table class="data-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th>ID</th><th>Device</th><th>Cable Run</th><th>Load</th><th>V Drop</th><th>Loss</th><th>SPL @ Ear</th><th>Delay</th><th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="font-mono">
+                                <tr v-for="node in flatLowZList" :key="node.id">
+                                    <td>{{ node.id }}</td>
+                                    <td>{{ node.speakerModel }}</td>
+                                    <td class="text-xs text-secondary">{{ node.length }}m <span v-if="node.length2">+ {{ node.length2 }}m</span> / {{ node.inputs.listenerDistance || 0 }}m Dist</td>
+                                    <td>{{ node.results?.load?.toFixed(2) }}Ω</td>
+                                    <td>{{ node.results?.dropPercent?.toFixed(2) }}%</td>
+                                    <td>{{ node.results?.powerLoss?.toFixed(1) }}W</td>
+                                    <td>{{ node.results?.acousticSPL?.toFixed(1) }}dB</td>
+                                    <td>{{ node.results?.delayMs?.toFixed(1) }}ms</td>
+                                    <td><span :class="['badge', getStatusClass(node.results?.status)]">{{ node.results?.status }}</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                     </div>
+                 </div>
+
+                 <!-- High-V Table -->
+                 <div v-if="flatHighVList.length > 0">
+                     <h3 class="text-sm font-semibold text-secondary mb-4 uppercase">100V System Breakdown</h3>
+                     <div class="overflow-x-auto">
+                        <table class="data-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th>ID</th><th>Device</th><th>Cable Run</th><th>Power</th><th>V @ Tap</th><th>Loss</th><th>SPL @ Ear</th><th>Delay</th><th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="font-mono">
+                                <tr v-for="node in flatHighVList" :key="node.id">
+                                    <td>{{ node.id }}</td>
+                                    <td>{{ node.speakerModel }}</td>
+                                    <td class="text-xs text-secondary">{{ node.length }}m <span v-if="node.length2">+ {{ node.length2 }}m</span> / {{ node.inputs.listenerDistance || 0 }}m Dist</td>
+                                    <td>{{ node.results?.totalPower?.toFixed(1) }}W</td>
+                                    <td>{{ node.results?.voltageAtSpeaker?.toFixed(1) }}V</td>
+                                    <td>{{ node.results?.powerLoss?.toFixed(1) }}W</td>
+                                    <td>{{ node.results?.acousticSPL?.toFixed(1) }}dB</td>
+                                    <td>{{ node.results?.delayMs?.toFixed(1) }}ms</td>
+                                    <td><span :class="['badge', getStatusClass(node.results?.status)]">{{ node.results?.status }}</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                     </div>
+                 </div>
+                 
+                 <div v-if="flatLowZList.length === 0 && flatHighVList.length === 0" class="text-center py-4 text-secondary">
+                     No calculations available. Start by adding speakers in the Calculator view.
+                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vue Template for Tree Node (Recursive) -->
+    <script type="text/x-template" id="tree-node-template">
+        <div class="node-wrapper animate-fade-in">
+            <div class="node-row grid grid-cols-1 md:grid-cols-[70px_2.5fr_2.5fr_0.8fr_0.8fr_0.8fr_0.8fr_0.8fr_100px_40px] gap-2 md:gap-4 items-center p-3 border-b border-border-subtle hover:bg-bg-input transition-colors">
+                
+                <div class="text-mono text-secondary font-bold">{{node.id}}</div>
+                
+                <div>
+                    <div class="text-primary font-medium text-sm">{{node.speakerModel}}</div>
+                    <div class="text-dim text-xs">
+                        <span v-if="!node.parentId">Source: {{node.ampModel}}</span>
+                        <span v-else>Source: {{node.parentId}}</span>
+                        <span class="mx-1">|</span>
+                        {{mode==='low-z' ? node.parallelCount+'x Parallel' : node.tapPower+'W Tap'}}
                     </div>
                 </div>
                 
-                <hr class="my-8">
-        
-                <div class="space-y-6">
-                    <div>
-                        <h3 class="text-xl font-semibold mb-4">Low-Impedance (Low-Z) Calculations</h3>
-                        <div class="space-y-4">
-                            <div class="formula-box">
-                                <span class="var">Leg Resistance (R_leg)</span>
-                                <pre>R_leg = (Cable_Ω_per_km * Length_m * 2) / 1000</pre>
-                                <span class="desc">Calculates the total resistance for a round trip of a single cable segment.</span>
-                            </div>
-                            <div class="formula-box">
-                                <span class="var">Branch Impedance (Z_branch)</span>
-                                <pre>Z_branch = Z_speaker + R_leg</pre>
-                                <span class="desc">The total load of a single branch is its speaker's impedance plus its own cable's resistance.</span>
-                            </div>
-                            <div class="formula-box">
-                                <span class="var">Total Load (Z_total)</span>
-                                <pre>Z_total = 1 / ( (1 / Z_branch_1) + (1 / Z_branch_2) + ... )</pre>
-                                <span class="desc">The total load seen by the amplifier is the parallel combination of all branches.</span>
-                            </div>
-                            <div class="formula-box">
-                                <span class="var">Source Voltage & Current</span>
-                                <pre>V_source = √(P_amplifier * Z_total)</pre>
-                                <pre>I_total = V_source / Z_total</pre>
-                                <span class="desc">Calculates the true voltage and current leaving the amplifier based on its power rating at the total load.</span>
-                            </div>
-                            <div class="formula-box">
-                                <span class="var">Branch Voltage & Current</span>
-                                <pre>V_at_node = V_parent - (I_parent * R_parent_leg)</pre>
-                                <pre>I_branch = V_at_node / Z_branch</pre>
-                                <span class="desc">The voltage at any node is the voltage from its parent, minus the drop in the parent's cable. This new voltage determines the current in the branch.</span>
-                            </div>
-                            <div class="formula-box">
-                                <span class="var">Voltage Drop (%)</span>
-                                <pre>V_at_speaker = V_at_node - (I_branch * R_leg)</pre>
-                                <pre>V_drop_% = (V_source - V_at_speaker) / V_source * 100</pre>
-                                <span class="desc">The *total* voltage lost from the amplifier all the way to the speaker.</span>
-                            </div>
-                            <div class="formula-box">
-                                <span class="var">Amplifier Output Impedance (Z_amp)</span>
-                                <pre>Z_amp = DF_Rated_At_Ω / Damping_Factor</pre>
-                                <span class="desc">The internal resistance of the amplifier, calculated from its specs.</span>
-                            </div>
-                            <div class="formula-box">
-                                <span class="var">Total Damping Factor (DF_total)</span>
-                                <pre>DF_total = Z_speaker / (R_total_cable_run + Z_amp)</pre>
-                                <span class="desc">The true damping factor at the speaker terminals. (R_total_cable_run is the sum of all cable legs from the amp to the speaker).</span>
-                            </div>
-                             <div class="formula-box">
-                                <span class="var">SPL Loss (dB)</span>
-                                <pre>P_at_speaker = V_at_speaker² / Z_speaker</pre>
-                                <pre>SPL_Loss = 10 * log10(P_at_speaker / P_speaker_RMS)</pre>
-                                <span class="desc">The audible volume loss in decibels, comparing the actual power at the speaker vs. its rated RMS power.</span>
-                            </div>
-                        </div>
+                <div class="text-mono text-xs text-secondary">
+                    <div>{{node.cableModel}} ({{node.length}}m)</div>
+                    <div v-if="node.cableModel2">+ {{node.cableModel2}} ({{node.length2}}m)</div>
+                    <div class="mt-1 text-highlight-blue">{{node.inputs.listenerDistance || 0}}m to Ear</div>
+                </div>
+                
+                <div class="text-mono text-sm">
+                    <span class="md:hidden text-xs text-dim mr-2">Load:</span>
+                    {{node.results?.load?.toFixed(2)}}<span v-if="mode==='low-z'">Ω</span><span v-else>W</span>
+                </div>
+                
+                <div :class="['text-mono font-bold text-sm', getStatusClass(node.results?.status)]">
+                    <span class="md:hidden text-xs text-dim mr-2">Drop:</span>
+                    <span v-if="mode==='low-z'">{{node.results?.dropPercent?.toFixed(2)}}%</span>
+                    <span v-else>{{(node.results?.dropVolts || 0).toFixed(1)}} V</span>
+                </div>
+                
+                <div class="text-mono text-secondary text-sm">
+                    <span class="md:hidden text-xs text-dim mr-2">Loss:</span>
+                    {{node.results?.powerLoss?.toFixed(1)}}W
+                </div>
+                
+                <div class="text-mono text-sm">
+                    <span class="md:hidden text-xs text-dim mr-2">SPL/Tap:</span>
+                    <div v-if="mode==='low-z'">{{node.results?.acousticSPL?.toFixed(1)}}dB <span class="text-xs text-dim">(@Ear)</span></div>
+                    <div v-else>{{node.results?.voltageAtSpeaker?.toFixed(1)}}V</div>
+                </div>
+                
+                <div class="text-mono text-sm">
+                    <span class="md:hidden text-xs text-dim mr-2">Delay:</span>
+                    <div class="text-highlight-blue">{{node.results?.delayMs?.toFixed(1)}}ms</div>
+                </div>
+                
+                <div class="flex flex-col justify-center md:block text-center">
+                    <span :class="['badge', getStatusClass(node.results?.status)]">{{node.results?.status}}</span>
+                    <div v-if="node.results?.status !== 'OK' && node.results?.statusMessage" class="text-[10px] mt-1 text-status-danger font-medium uppercase tracking-wide">
+                        {{ node.results.statusMessage.replace('Hazard:', '').replace('Warning:', '').trim() }}
                     </div>
-        
-                    <div>
-                        <h3 class="text-xl font-semibold mb-4">High-Impedance (100V) Calculations</h3>
-                        <div class="space-y-4">
-                            <div class="formula-box">
-                                <span class="var">Total Power (P_total)</span>
-                                <pre>P_total = P_node + P_child_1 + P_child_2 + ...</pre>
-                                <span class="desc">The total power on the line is the sum of all speaker tap settings.</span>
-                            </div>
-                            <div class="formula-box">
-                                <span class="var">Line Current (I)</span>
-                                <pre>I = P_total / V_start (e.g., 100V)</pre>
-                                <span class="desc">Calculates the total current drawn by all speakers on this segment.</span>
-                            </div>
-                            <div class="formula-box">
-                                <span class="var">Voltage Drop (V_drop)</span>
-                                <pre>V_drop = LineCurrent * Cable_Resistance</pre>
-                                <span class="desc">The amount of voltage lost as heat in this specific cable segment.</span>
-                            </div>
-                            <div class="formula-box">
-                                <span class="var">Voltage at Node (V_node)</span>
-                                <pre>V_node = V_start - V_drop</pre>
-                                <span class="desc">The new, lower voltage available at the end of this cable segment.</span>
-                            </div>
-                            <div class="formula-box">
-                                <span class="var">Power at Speaker (P_speaker)</span>
-                                <pre>P_speaker = PowerTap * (V_node / V_start)²</pre>
-                                <span class="desc">The *actual* power delivered to the speaker. Power scales with the *square* of the voltage.</span>
-                            </div>
-                        </div>
-                    </div>
-        
-                    <div>
-                        <h3 class="text-xl font-semibold mb-4">Status Messages</h3>
-                        <div class="space-y-2">
-                            <p><span class="badge badge-green">OK</span> - All calculations are within nominal parameters.</p>
-                            <p><span class="badge badge-yellow">Warning</span> - The system is approaching a limit.
-                                <br> &bull; **Low-Z:** Amp > 90% | Low DF (< 20)
-                                <br> &bull; **Low-Z (Satellites/Small):** High VD (> 5%)
-                                <br> &bull; **Low-Z (Subwoofers/Large):** High VD (> 2.5%)
-                                <br> &bull; **High-V:** Amp > 90% | < 95V at Tap
-                            </p>
-                            <p><span class="badge badge-red">Hazard</span> - The system is outside of safe parameters.
-                                <br> &bull; **Low-Z:** Amp Overload | Amp Min Load | Low DF (< 10)
-                                <br> &bull; **Low-Z (Satellites/Small):** High VD (> 10%)
-                                <br> &bull; **Low-Z (Subwoofers/Large):** High VD (> 5%)
-                                <br> &bull; **High-V:** Amp Overload | < 90V at Tap
-                            </p>
-                        </div>
-                    </div>
-
+                </div>
+                
+                <div class="text-right">
+                    <button @click="$emit('delete', node.id)" class="text-status-danger hover:text-white font-bold px-2 text-lg">&times;</button>
                 </div>
             </div>
-        </div>
-        <div id="confirmation-modal" class="modal">
-            <div class="modal-content">
-                <h3 class="text-lg font-semibold mb-4">Confirm Action</h3>
-                <p id="confirmation-message" class="mb-6"></p>
-                <div class="flex justify-end space-x-4">
-                    <button id="confirm-cancel" class="btn btn-secondary">Cancel</button>
-                    <button id="confirm-ok" class="btn btn-danger">Confirm</button>
-                </div>
+            
+            <div v-if="node.children && node.children.length" class="node-child-container border-l border-border-subtle ml-4 md:ml-6 pl-2">
+                <tree-node v-for="c in node.children" :key="c.id" :node="c" :mode="mode" @delete="$emit('delete', $event)"></tree-node>
             </div>
         </div>
-
-        <div id="message-modal" class="modal">
-            <div class="modal-content">
-                <h3 id="message-title" class="text-lg font-semibold mb-4"></h3>
-                <p id="message-text" class="mb-6"></p>
-                <div class="flex justify-end">
-                    <button id="message-ok" class="btn btn-primary">OK</button>
-                </div>
-            </div>
-        </div>
-
-    </div>
+    </script>
     
+    <!-- Footer with V1 content and GitHub link -->
     <footer class="app-footer">
-        App Admin: Sindre Løvlie Haugen | E-mail: <a href="mailto:sindre.haugen@gmail.com">sindre.haugen@gmail.com</a> | LinkedIn: <a href="https://www.linkedin.com/in/sindrelhaugen/" target="_blank">linkedin.com/in/sindrelhaugen</a>
+        App Admin: Sindre Løvlie Haugen | Source Code: <a href="https://github.com/sindrehaugen/SpeakerDesignTool" target="_blank">GitHub</a> | LinkedIn: <a href="https://www.linkedin.com/in/sindrelhaugen/" target="_blank">linkedin.com/in/sindrelhaugen</a>
     </footer>
-    
+
+    <script src="database.js"></script>
+    <script src="physics.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
