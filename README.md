@@ -64,7 +64,7 @@ We calculate voltage drop using vector math to account for phase angles between 
 4.  **Build:** Select an amplifier and start adding speakers.
     * **Daisy Chaining:** To chain speakers, add a new calculation and set the "Source" dropdown to the ID of the previous speaker.
 5.  **Analyze:** Watch the live dashboard for **Warnings** or **Errors**.
-6.  **Report:** Go to the **Reports** tab to generate a comprehensive PDF documentation package.
+6.  **Report:** Go to the **Reports** tab to generate a comprehensive PDF documentation package including BOM.
 
 ## **📄 License**
 
