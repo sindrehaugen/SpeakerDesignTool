@@ -1,5 +1,7 @@
 # **Speaker Design Tool v2.3.6**
 
+*Download ZIP-file:* https://github.com/sindrehaugen/SpeakerDesignTool/archive/refs/heads/main.zip
+
 A professional-grade, browser-based calculator for designing Low-Impedance (Low-Z) and High-Impedance (100V) audio systems.
 
 ## **📖 Overview**
