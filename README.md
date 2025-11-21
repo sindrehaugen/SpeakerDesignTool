@@ -13,7 +13,7 @@ Designed for AV integrators and system designers, it ensures your designs meet c
 ### **🚀 Advanced Physics Engine**
 
 * **Complex Impedance Modeling:** Calculates $Z = \sqrt{R^2 + X_L^2}$ rather than just DC resistance ($R$), ensuring accuracy for long cable runs and high frequencies.
-* **Thermal Derating:** Simulates the increase in copper resistance due to ambient temperature rise (0.393% per °C), critical for fire safety and attic/conduit runs.
+* **Thermal Derating:** Simulates the increase in copper resistance due to ambient temperature rise (0.393% per °C).
 * **High-Frequency Loss Analysis:** Calculates audible treble roll-off caused by cable capacitance ($C$) acting as a low-pass filter.
 * **Headroom Analysis:** Automatically warns if the total speaker load exceeds safe amplifier capacity (80% for subs/large, 85% for small/satellites).
 
