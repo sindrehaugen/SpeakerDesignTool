@@ -44,7 +44,8 @@ The tool evaluates your design dynamically based on your selected **Quality Stan
 
 ## **📚 Included Database Library**
 
-The tool comes pre-loaded with specifications for professional equipment from manufacturers including:
+The distribution includes extensive database files (`speakers_db.csv`, `amplifiers_db.csv`, `cables_db.csv`) that you can import to instantly populate your library. These files contain specifications for professional equipment from many major brands, including:
+
 **Amadeus Labs, Audac, Biamp, Blaze Audio, Bose Professional, Crown, EAW, JBL, K-array, Lab Gruppen, LD Systems, LEA Professional, Martin Audio, Powersoft, QSC, Yamaha**, and more.
 
 ## **🧮 Math & Formulas**
@@ -64,7 +65,7 @@ We calculate voltage drop using vector math to account for phase angles between 
 4.  **Build:** Select an amplifier and start adding speakers.
     * **Daisy Chaining:** To chain speakers, add a new calculation and set the "Source" dropdown to the ID of the previous speaker.
 5.  **Analyze:** Watch the live dashboard for **Warnings** or **Errors**.
-6.  **Report:** Go to the **Reports** tab to generate a comprehensive PDF documentation package including BOM.
+6.  **Report:** Go to the **Reports** tab to generate a comprehensive PDF documentation package.
 
 ## **📄 License**
 
