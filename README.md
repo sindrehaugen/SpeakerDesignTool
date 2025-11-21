@@ -1,4 +1,4 @@
-# **Speaker Design Tool v2.0.2**
+# **Speaker Design Tool v2.3.6**
 
 A professional-grade, browser-based calculator for designing Low-Impedance (Low-Z) and High-Impedance (100V) audio systems.
 
@@ -11,51 +11,41 @@ Designed for AV integrators and system designers, it ensures your designs meet c
 ## **✨ Key Features**
 
 ### **🚀 Advanced Physics Engine**
-
 * **Complex Impedance Modeling:** Calculates $Z = \sqrt{R^2 + X_L^2}$ rather than just DC resistance ($R$), ensuring accuracy for long cable runs and high frequencies.
 * **Thermal Derating:** Simulates the increase in copper resistance due to ambient temperature rise (0.393% per °C).
 * **High-Frequency Loss Analysis:** Calculates audible treble roll-off caused by cable capacitance ($C$) acting as a low-pass filter.
-* **Headroom Analysis:** Automatically warns if the total speaker load exceeds safe amplifier capacity (80% for subs/large, 85% for small/satellites).
+* **Dynamic Headroom Analysis:** Automatically warns if the total speaker load exceeds safe amplifier capacity relative to the chosen Quality Standard.
 
 ### **🛠️ Professional Workflow**
-
+* **Three Quality Standards:**
+    * **High-End:** Strict limits for critical listening and concert audio (< 5% Drop).
+    * **Average:** Balanced settings for commercial BGM and retail (< 10% Drop).
+    * **Speech:** Optimized for intelligibility and paging systems (< 15-25% Drop).
 * **Dual Topology Calculator:**
-    * **Low-Z Mode:** For performance audio (Subs, Arrays). Tracks Min/Nom Load, Voltage Drop, Damping Factor, and Electrical dB Loss.
-    * **100V Mode:** For distributed audio (Paging, BGM). Tracks Transformer Saturation, Voltage at Tap, and Total Power.
-* **Project Management:** Save and Load your entire calculation tree as a CSV file to continue work later.
-* **Custom Labeling:** Name individual cable runs (e.g., "Lobby Left", "Bar Sub") for easier identification.
-* **Bill of Materials (BOM):** Automatically generates an equipment list for your project reports.
-* **Database Manager:** Full CRUD (Create, Read, Update, Delete) support for your inventory of Speakers, Cables, and Amplifiers.
-* **Unified Reporting:** One-click PDF generation with detailed technical breakdowns, pass/fail status, and equipment pick-lists.
+    * **Low-Z Mode:** Tracks Min/Nom Load, Voltage Drop, Damping Factor, and Electrical dB Loss.
+    * **100V Mode:** Tracks Transformer Saturation risks, Voltage at Tap, and Total Power.
+* **Smart Project Portability:**
+    * **Robust CSV Import:** Automatically resolves conflicts if device IDs change between computers.
+    * **Data Verification:** Checks Brand/Model names against your database to ensure data integrity.
+* **Database Manager:** Full CRUD (Create, Read, Update, Delete) support with CSV bulk import/export.
 
 ## **📐 Technical Standards & Thresholds**
 
-The tool evaluates your design against the following professional standards:
+The tool evaluates your design dynamically based on your selected **Quality Standard**:
 
-| Metric | Application | Warning Threshold | Critical Error | Impact |
+| Metric | High-End (Reference) | Average (Commercial) | Speech Only (Paging) | Impact |
 | :--- | :--- | :--- | :--- | :--- |
-| **Voltage Drop** | Subwoofers / Main PA | > 2.5% | > 5.0% | Loss of headroom, weak transient response. |
-| **Voltage Drop** | Fill / Satellite | > 5.0% | > 10.0% | Audible compression, amplifier strain, heat. |
-| **Damping Factor** | Low-Z Systems | < 20 | < 10 | "Muddy" bass, loss of cone control. |
-| **100V Line Voltage** | Distributed Systems | < 95V | < 90V | Transformer saturation, distortion. |
-| **Headroom** | Amp Loading | > 80-85% | > 100% | Clipping, amplifier protection shutdown. |
+| **Voltage Drop** | **Warning:** > 5%<br>**Error:** > 10% | **Warning:** > 10%<br>**Error:** > 20% | **Warning:** > 15%<br>**Error:** > 25% | Dynamics, Headroom, Saturation |
+| **Damping Factor** | **Warning:** < 20<br>**Error:** < 10 | **Warning:** < 10<br>**Error:** < 5 | **Warning:** < 5<br>**Error:** < 2 | Bass tightness, Transient response |
+| **Headroom Safety** | **Limit:** 80% Load | **Limit:** 90% Load | **Limit:** 95% Load | Amplifier Clipping/Shutdown |
+| **HF Check Freq** | 10 kHz | 6 kHz | 4 kHz | Treble Roll-off / Clarity |
 
 ## **📚 Included Database Library**
 
-The tool comes pre-loaded with specifications for professional equipment from the following manufacturers:
-
-### **🔊 Speakers**
-Amadeus Labs, Audac, Biamp, Blaze Audio, Bose Professional, Community, DAS Audio, EAW, FBT Audio, HK Audio, JBL, K-array, K-gear, LD Systems, Martin Audio, QSC, RCF, SE Audiotechnik, Sonance, Turbosound, Void Acoustics, Yamaha.
-
-### **🔌 Amplifiers**
-Ashly, Audac, Behringer, Blaze Audio, Bose Professional, Crestron, Crown, DAP, Dynacord, Full Fat Audio, Hoellstern, Innosonix, K-Array, K-GEAR, Lab Gruppen, LEA Professional, LD Systems, Linea Research, MC2 Audio, Powersoft, QSC, RAM Audio, SE Audiotechnik, TOA Electronics, Wharfedale Pro, XTA, Yamaha.
-
-### **⚡ Cables**
-Adam Hall, AudioQuest, Belden, Canare, Cordial, Crestron, Draka, Eurocable, Extron, Gotham, Kelsey, Klotz, LAPP, Liberty, Mogami, Procab, SCP, Sommer, Supra, Tasker, Titanex, Van Damme, West Penn.
+The tool comes pre-loaded with specifications for professional equipment from manufacturers including:
+**Amadeus Labs, Audac, Biamp, Blaze Audio, Bose Professional, Crown, EAW, JBL, K-array, Lab Gruppen, LD Systems, LEA Professional, Martin Audio, Powersoft, QSC, Yamaha**, and more.
 
 ## **🧮 Math & Formulas**
-
-### **Electrical Transmission**
 
 We calculate voltage drop using vector math to account for phase angles between the inductive cable and resistive load.
 
@@ -65,15 +55,14 @@ We calculate voltage drop using vector math to account for phase angles between 
 * **Electrical SPL Loss:** $20 \cdot \log_{10}(V_{load} / V_{source})$
 
 ## **🚀 Quick Start**
-_Optional: Import the included csv databases of products or build your own product library._
 
-1.  **Run:** Open `Speaker Design Tool.html` in any modern web browser (Chrome, Edge, Firefox).
-2.  **Configure:** Set your **Project Name** and **Ambient Temperature** (top right).
+1.  **Configure:** Set your **Project Name** and **Ambient Temperature** (top bar).
+2.  **Select Standard:** Choose **High-End**, **Average**, or **Speech** based on the venue type.
 3.  **Select Mode:** Toggle between **Low-Z** and **100V**.
 4.  **Build:** Select an amplifier and start adding speakers.
     * **Daisy Chaining:** To chain speakers, add a new calculation and set the "Source" dropdown to the ID of the previous speaker.
 5.  **Analyze:** Watch the live dashboard for **Warnings** or **Errors**.
-6.  **Save/Report:** Use "Save Project" to backup your work, or go to the **Reports** tab to generate a PDF documentation package.
+6.  **Report:** Go to the **Reports** tab to generate a comprehensive PDF documentation package.
 
 ## **📄 License**
 
