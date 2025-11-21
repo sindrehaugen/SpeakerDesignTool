@@ -1,16 +1,50 @@
 /**
- * Speaker Design Tool v2.0.2 - Main Logic
- * Changes: 
- * - Version bump to v2.0.2
- * - Consolidated features: Project Save/Load, Headroom Checks, "Error" status.
- * - Added Unique ID generation on DB Import to handle duplicate model names.
+ * Speaker Design Tool v2.3.6
+ * Fixes: Auto-Repair Database (Corrupt Types), Smart Keyword Scanning for Import
  */
 
 const { createApp, reactive, computed, watch, onMounted, ref } = Vue;
 
+// --- CONFIGURATION PROFILES ---
+const QUALITY_PROFILES = {
+    'high-end': {
+        label: 'High-End / Reference',
+        description: 'Strict limits for critical listening, concert PA, and studios.',
+        thresholds: {
+            lowz_vd_warn: 5.0, lowz_vd_err: 10.0,
+            highv_vd_warn: 5.0, highv_vd_err: 10.0,
+            df_warn: 20, df_err: 10,
+            headroom_warn: 0.80,
+            hf_check_freq: 10000
+        }
+    },
+    'average': {
+        label: 'Commercial / BGM',
+        description: 'Standard balance for retail, hospitality, and background music.',
+        thresholds: {
+            lowz_vd_warn: 10.0, lowz_vd_err: 15.0,
+            highv_vd_warn: 10.0, highv_vd_err: 20.0,
+            df_warn: 10, df_err: 5,
+            headroom_warn: 0.90,
+            hf_check_freq: 6000
+        }
+    },
+    'speech': {
+        label: 'Speech Only',
+        description: 'Optimized for intelligibility and paging; tolerates higher loss.',
+        thresholds: {
+            lowz_vd_warn: 15.0, lowz_vd_err: 25.0,
+            highv_vd_warn: 15.0, highv_vd_err: 25.0,
+            df_warn: 5, df_err: 2,
+            headroom_warn: 0.95,
+            hf_check_freq: 4000
+        }
+    }
+};
+
 const app = createApp({
     setup() {
-        const APP_VERSION = 'v2.0.2'; 
+        const APP_VERSION = 'v2.3.6'; 
         
         // --- STATE ---
         let savedDb;
@@ -18,6 +52,30 @@ const app = createApp({
 
         if (!savedDb || !savedDb.speakers || !savedDb.cables || !savedDb.amplifiers) {
             savedDb = JSON.parse(JSON.stringify(DEFAULT_DATABASE));
+        }
+
+        // --- AUTO-REPAIR DATABASE ON LOAD ---
+        // Fixes issues where "Type" became a number due to CSV shifting
+        let dbDirty = false;
+        if (savedDb.speakers) {
+            for (const key in savedDb.speakers) {
+                const s = savedDb.speakers[key];
+                const validTypes = ['Lo-Z', '100V', 'Both', 'Active'];
+                
+                // If type is missing or invalid (e.g. it's a number like "7.5" from a bad import)
+                if (!s.type || !validTypes.includes(s.type)) {
+                    // Guess based on data
+                    if (s.impedance && (s.taps || s.wattage_100v)) s.type = 'Both';
+                    else if (s.impedance) s.type = 'Lo-Z';
+                    else if (s.taps) s.type = '100V';
+                    else s.type = 'Both'; // Fallback
+                    dbDirty = true;
+                }
+            }
+        }
+        if (dbDirty) {
+            localStorage.setItem('sdt_database_v2', JSON.stringify(savedDb));
+            console.log("Database auto-repaired.");
         }
 
         const database = reactive(savedDb);
@@ -31,7 +89,8 @@ const app = createApp({
         
         const currentView = ref('calculator');
         const calculatorMode = ref('low-z'); 
-        
+        const qualityMode = ref('high-end');
+
         const dbTab = ref('speakers');
         const dbEditMode = ref(false);
         const reportForm = reactive({ company: '', designer: '', notes: '' });
@@ -40,7 +99,7 @@ const app = createApp({
         const projectImportInput = ref(null); 
 
         const dbForm = reactive({
-            id: '', brand: '', impedance: 8, wattage_rms: 100, wattage_peak: 200,
+            id: '', brand: '', model: '', impedance: 8, wattage_rms: 100, wattage_peak: 200,
             max_spl: 100, taps: '', type: 'Both', category: 'small_fullrange',
             resistance: 0, capacitance: 0, inductance: 0,
             watt_8: 0, watt_4: 0, watt_2: 0, watt_100v: 0, df: 100, min_load: 2
@@ -53,17 +112,47 @@ const app = createApp({
             parallelCount: 1, tapPower: 30, useBridgeMode: false
         });
 
-        // --- COMPUTED ---
+        // --- COMPUTED HELPERS ---
+        const currentProfile = computed(() => QUALITY_PROFILES[qualityMode.value]);
+
+        const findIdByProps = (type, brand, model) => {
+            const dbSet = database[type];
+            if (!dbSet) return null;
+            if (model && dbSet[model]) return model;
+            if (brand && model) {
+                const qBrand = brand.trim().toLowerCase();
+                const qModel = model.trim().toLowerCase();
+                for (const [id, item] of Object.entries(dbSet)) {
+                    const dbBrand = (item.brand || '').trim().toLowerCase();
+                    const dbModel = (item.model || id).trim().toLowerCase();
+                    if (dbBrand === qBrand && dbModel === qModel) return id;
+                }
+            }
+            return null; 
+        };
+
+        const getDeviceLabel = (type, id) => {
+            if (!id) return '-';
+            if (!database[type]) return id;
+            const item = database[type][id];
+            return item ? `${item.brand} ${item.model || id}` : id;
+        };
+        
+        const getDeviceDetails = (type, id) => {
+            const item = database[type]?.[id];
+            if (!item) return { id: '', brand: '', model: id || '' };
+            return { id: id, brand: item.brand || 'Generic', model: item.model || id };
+        };
+
         const speakerOptions = computed(() => {
             const m = calculatorMode.value === 'low-z' ? 'Lo-Z' : '100V';
             const list = [];
             for (const [id, s] of Object.entries(database.speakers)) {
-                if (s.type === 'Both' || s.type === m) {
+                const type = s.type || 'Both'; // Default to Both if undefined
+                if (type === 'Both' || type === m) {
                     const brand = s.brand ? s.brand : 'Generic';
-                    // Use the saved model name if available, otherwise fallback to ID
                     const name = s.model || id; 
                     const detail = m === 'Lo-Z' ? `${s.impedance}Ω` : '100V';
-                    // ID is still used as the value, but label shows the friendly name
                     list.push({ id: id, label: `${brand} - ${name} (${detail})` });
                 }
             }
@@ -77,7 +166,6 @@ const app = createApp({
                 const model = c.model && c.model !== id ? c.model : '';
                 let label = `${brand}`;
                 if(model) label += ` - ${model}`;
-                label += ` (${id})`; 
                 list.push({ id: id, label: label });
             }
             return list.sort((a,b) => a.label.localeCompare(b.label));
@@ -87,7 +175,7 @@ const app = createApp({
             const list = [];
             for (const [id, a] of Object.entries(database.amplifiers)) {
                 const brand = a.brand ? a.brand : 'Generic';
-                const name = a.model || id; // Use model name if available
+                const name = a.model || id; 
                 let details = calculatorMode.value === 'low-z' 
                     ? `${a.watt_8}W@8Ω` 
                     : `${a.watt_100v || a.watt_8}W@100V`;
@@ -119,17 +207,21 @@ const app = createApp({
             return l;
         });
 
-        const currentDbData = computed(() => database[dbTab.value]);
+        const currentDbData = computed(() => {
+            const raw = database[dbTab.value];
+            return Object.entries(raw).map(([k, v]) => ({ ...v, id: k })).sort((a, b) => {
+                const ba = (a.brand || '').toString().toLowerCase();
+                const bb = (b.brand || '').toString().toLowerCase();
+                if (ba < bb) return -1;
+                if (ba > bb) return 1;
+                
+                const ma = (a.model || a.id).toString().toLowerCase();
+                const mb = (b.model || b.id).toString().toLowerCase();
+                return ma.localeCompare(mb);
+            });
+        });
 
-        const getDeviceLabel = (type, id) => {
-            if (!id) return '-';
-            if (!database[type]) return id;
-            const item = database[type][id];
-            // Display Model name preferentially over the ID
-            return item ? `${item.brand} ${item.model || id}` : id;
-        };
-
-        // --- COMPLEX MATH HELPERS ---
+        // --- PHYSICS ENGINE ---
         const cAdd = (a, b) => ({ real: a.real + b.real, imaginary: a.imaginary + b.imaginary });
         const cDiv = (a, b) => {
             const denom = b.real * b.real + b.imaginary * b.imaginary;
@@ -183,7 +275,7 @@ const app = createApp({
             return zTotal;
         };
 
-        // --- CALCULATION ENGINE ---
+        // --- CALCULATION LOOP ---
         const calculateAll = () => {
             if (Object.keys(database.speakers).length === 0) return;
             lowZRoots.value.forEach(root => { try { calculateLowZBranch(root); } catch(e) { console.error(e); } });
@@ -202,6 +294,7 @@ const app = createApp({
         const calculateLowZBranch = (node, parentVolts = null, parentCumulativeR = 0, rootSourceVoltage = null, rootAmpModel = null) => {
             const speaker = database.speakers[node.speakerModel];
             const cable1 = database.cables[node.cableModel];
+            const limits = currentProfile.value.thresholds;
             
             if (!speaker || !cable1) { node.results = { status: 'Error', statusMsg: 'Missing Data' }; return; }
 
@@ -218,7 +311,7 @@ const app = createApp({
                 const rootAmp = database.amplifiers[ampModel];
                 if(rootAmp) {
                     const power = useBridge ? (rootAmp.watt_bridge_8 || 0) : rootAmp.watt_8;
-                    sourceVoltage = Math.sqrt(power * 8); // Ref voltage @ 8Ω
+                    sourceVoltage = Math.sqrt(power * 8);
                     currentRootVoltage = sourceVoltage; 
                     currentRootAmp = rootAmp;
                     ampZ = 8 / (rootAmp.df || 100);
@@ -249,18 +342,16 @@ const app = createApp({
             const cumulativeR = parentCumulativeR + tx.cableResistance;
             const zSpeakerNom = (speaker.impedance) / parallel;
             const totalDF = physics.calculateDampingFactor(zSpeakerNom, ampZ, cumulativeR);
-            const hfCheck = physics.calculateHFLoss(safeVolts, zMinMagnitude, cable1, node.length, globalSettings.temp_c);
+            const hfCheck = physics.calculateHFLoss(safeVolts, zMinMagnitude, cable1, node.length, globalSettings.temp_c, limits.hf_check_freq);
             
             let status = 'OK';
             let statusMsg = '';
 
-            // Voltage & DF Checks
-            if (totalDropPercent > 5) { status = 'Warning'; statusMsg = 'High VD'; }
-            if (totalDF < 20 && status !== 'Error') { status = 'Warning'; statusMsg = 'Low DF'; }
-            if (totalDropPercent > 10) { status = 'Error'; statusMsg = 'High VD'; }
-            if (totalDF < 10) { status = 'Error'; statusMsg = 'Low DF'; }
+            if (totalDropPercent > limits.lowz_vd_warn) { status = 'Warning'; statusMsg = 'High VD'; }
+            if (totalDF < limits.df_warn && status !== 'Error') { status = 'Warning'; statusMsg = 'Low DF'; }
+            if (totalDropPercent > limits.lowz_vd_err) { status = 'Error'; statusMsg = 'Critical VD'; }
+            if (totalDF < limits.df_err) { status = 'Error'; statusMsg = 'Critical DF'; }
 
-            // HEADROOM CHECK
             if (currentRootAmp && !node.parentId) {
                 const totalWatts = getTotalRMS(node);
                 let ampCapacity = currentRootAmp.watt_8;
@@ -274,8 +365,7 @@ const app = createApp({
                     else if (systemNominalZ < 6 && currentRootAmp.watt_4) ampCapacity = currentRootAmp.watt_4;
                 }
 
-                const isHeavy = speaker.category === 'subwoofer' || speaker.category === 'large_fullrange';
-                const thresholdPct = isHeavy ? 0.80 : 0.85;
+                const thresholdPct = limits.headroom_warn; 
                 
                 if (ampCapacity > 0 && totalWatts > (ampCapacity * thresholdPct)) {
                     const level = status === 'Error' ? 'Error' : 'Warning'; 
@@ -305,6 +395,8 @@ const app = createApp({
         const calculateHighVBranch = (node, parentVolts = 100, rootAmpModel = null) => {
             const cable = database.cables[node.cableModel];
             const speaker = database.speakers[node.speakerModel];
+            const limits = currentProfile.value.thresholds;
+
             if (!cable || !speaker) return;
             
             let currentRootAmp = rootAmpModel;
@@ -323,13 +415,12 @@ const app = createApp({
 
             let status = 'OK';
             let statusMsg = '';
-            if (voltsAtNode < 95) { status = 'Warning'; statusMsg = 'Low V'; }
-            if (voltsAtNode < 90) { status = 'Error'; statusMsg = 'Low V'; }
+            if (dropPercent > limits.highv_vd_warn) { status = 'Warning'; statusMsg = 'Low V'; }
+            if (dropPercent > limits.highv_vd_err) { status = 'Error'; statusMsg = 'Critical V'; }
 
             if (currentRootAmp && !node.parentId) {
                 const ampCap = currentRootAmp.watt_100v || currentRootAmp.watt_8;
-                const isHeavy = speaker.category === 'subwoofer' || speaker.category === 'large_fullrange';
-                const thresholdPct = isHeavy ? 0.80 : 0.85;
+                const thresholdPct = limits.headroom_warn;
 
                 if(ampCap > 0 && totalP > (ampCap * thresholdPct)) {
                      const level = status === 'Error' ? 'Error' : 'Warning';
@@ -338,7 +429,7 @@ const app = createApp({
                 }
             }
 
-            const hfCheck = physics.calculateHFLoss(parentVolts, (Math.pow(parentVolts, 2) / (totalP || 1)), cable, node.length, globalSettings.temp_c);
+            const hfCheck = physics.calculateHFLoss(parentVolts, (Math.pow(parentVolts, 2) / (totalP || 1)), cable, node.length, globalSettings.temp_c, limits.hf_check_freq);
             
             node.results = {
                 voltageAtSpeaker: voltsAtNode,
@@ -427,20 +518,34 @@ const app = createApp({
             }
         };
 
-        // --- SAVE / LOAD PROJECT ---
         const triggerProjectImport = () => {
             if (projectImportInput.value) projectImportInput.value.click();
         };
 
+        // --- ROBUST CSV EXPORT ---
         const exportProjectCsv = () => {
-            const rows = [['Type', 'ID', 'ParentID', 'Name', 'AmpModel', 'SpeakerModel', 'CableModel', 'Length', 'CableModel2', 'Length2', 'Parallel', 'TapPower', 'Bridge']];
+            const headers = [
+                'Type', 'ID', 'ParentID', 'UserLabel',
+                'AmpID', 'AmpBrand', 'AmpModel',
+                'SpeakerID', 'SpeakerBrand', 'SpeakerModel',
+                'CableID', 'CableBrand', 'CableModel', 'Length',
+                'Cable2ID', 'Cable2Brand', 'Cable2Model', 'Length2',
+                'Parallel', 'TapPower', 'Bridge'
+            ];
+            const rows = [headers];
             
             const serializeNode = (node, type) => {
+                const amp = node.inputs.ampModel ? getDeviceDetails('amplifiers', node.inputs.ampModel) : {id:'', brand:'', model:''};
+                const spk = getDeviceDetails('speakers', node.inputs.speakerModel);
+                const cab = getDeviceDetails('cables', node.inputs.cableModel);
+                const cab2 = node.inputs.cableModel2 ? getDeviceDetails('cables', node.inputs.cableModel2) : {id:'', brand:'', model:''};
+
                 rows.push([
                     type, node.id, node.parentId || '', node.userLabel || '', 
-                    node.inputs.ampModel || '', node.inputs.speakerModel, 
-                    node.inputs.cableModel, node.inputs.length,
-                    node.inputs.cableModel2 || '', node.inputs.length2 || 0,
+                    amp.id, amp.brand, amp.model,
+                    spk.id, spk.brand, spk.model,
+                    cab.id, cab.brand, cab.model, node.inputs.length,
+                    cab2.id, cab2.brand, cab2.model, node.inputs.length2 || 0,
                     node.inputs.parallelCount, node.inputs.tapPower,
                     node.inputs.useBridgeMode ? '1' : '0'
                 ]);
@@ -450,13 +555,21 @@ const app = createApp({
             lowZRoots.value.forEach(n => serializeNode(n, 'Low-Z'));
             highVRoots.value.forEach(n => serializeNode(n, '100V'));
 
-            const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+            const escapeCsv = (str) => {
+                if (str === null || str === undefined) return '';
+                const s = String(str);
+                if (s.includes('"') || s.includes(',') || s.includes('\n')) return `"${s.replace(/"/g, '""')}"`;
+                return s;
+            };
+
+            const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.map(escapeCsv).join(",")).join("\n");
             const link = document.createElement("a");
             link.href = encodeURI(csvContent);
-            link.download = `${project.name || 'Untitled'} - Calculations.csv`;
+            link.download = `${project.name || 'Untitled'} - Calculations_v2.3.csv`;
             link.click();
         };
 
+        // --- SMART CSV IMPORT (FIXED FOR UNQUOTED TAPS & KEYWORD SCANNING) ---
         const loadProjectCsv = (e) => {
             const file = e.target.files[0]; if(!file) return;
             const r = new FileReader();
@@ -468,30 +581,129 @@ const app = createApp({
                     lowZRoots.value = [];
                     highVRoots.value = [];
                     
-                    const nodes = [];
+                    const resolutionCache = {};
+
+                    const resolveDevice = (type, csvId, csvBrand, csvModel) => {
+                        if(!csvId && !csvModel) return null; 
+                        
+                        const typeLabel = type.slice(0,-1); 
+                        const cacheKey = `${type}:${csvId}:${csvBrand}:${csvModel}`;
+                        if(resolutionCache[cacheKey]) return resolutionCache[cacheKey];
+
+                        const dbItem = database[type][csvId];
+                        if (dbItem) {
+                            const dbBrand = (dbItem.brand || '').trim().toLowerCase();
+                            const dbModel = (dbItem.model || csvId).trim().toLowerCase();
+                            const cBrand = (csvBrand || '').trim().toLowerCase();
+                            const cModel = (csvModel || '').trim().toLowerCase();
+
+                            if (dbBrand === cBrand && dbModel === cModel) return csvId; 
+                            
+                            const betterMatchId = findIdByProps(type, csvBrand, csvModel);
+                            if (betterMatchId) {
+                                if (confirm(`Conflict for ${typeLabel}:\nFile ID: ${csvId} (${csvBrand} ${csvModel})\nDB ID: ${csvId} (${dbItem.brand} ${dbItem.model||csvId})\n\nFound exact match elsewhere in DB (ID: ${betterMatchId}).\nUse exact match?`)) {
+                                    resolutionCache[cacheKey] = betterMatchId;
+                                    return betterMatchId;
+                                }
+                            } else {
+                                if (!confirm(`Conflict for ${typeLabel}:\nFile ID: ${csvId} (${csvBrand} ${csvModel})\nDB ID: ${csvId} (${dbItem.brand} ${dbItem.model||csvId})\n\nNo exact match found. Keep using DB item?`)) {
+                                    return null; 
+                                }
+                            }
+                            return csvId;
+                        }
+
+                        const matchId = findIdByProps(type, csvBrand, csvModel);
+                        if (matchId) {
+                            if (confirm(`${typeLabel} ID '${csvId}' not found.\nFound matching: ${csvBrand} ${csvModel} (ID: ${matchId}).\n\nMap to this device?`)) {
+                                resolutionCache[cacheKey] = matchId;
+                                return matchId;
+                            }
+                        }
+                        
+                        console.warn(`Skipping ${typeLabel}: ${csvId} (${csvBrand} ${csvModel}) not found.`);
+                        return null;
+                    };
+
+                    const parseLine = (text) => {
+                        const res = [];
+                        let cur = ''; let inQuote = false;
+                        for (let i=0; i<text.length; i++) {
+                            const c = text[i];
+                            if (c === '"') {
+                                if (inQuote && text[i+1] === '"') { cur += '"'; i++; } 
+                                else { inQuote = !inQuote; }
+                            } else if (c === ',' && !inQuote) { res.push(cur); cur = ''; } 
+                            else { cur += c; }
+                        }
+                        res.push(cur);
+                        return res;
+                    };
+
                     for(let i=1; i<lines.length; i++) {
                         const line = lines[i].trim();
                         if(!line) continue;
-                        const cols = line.split(',');
+                        const cols = parseLine(line).map(s => s.trim());
                         
-                        if(cols.length < 12) continue;
+                        let nodeData = {};
+
+                        if (cols.length >= 20) {
+                            const [
+                                type, id, parentId, label,
+                                aId, aB, aM,
+                                sId, sB, sM,
+                                cId, cB, cM, len,
+                                c2Id, c2B, c2M, len2,
+                                par, tap, bridge
+                            ] = cols;
+
+                            nodeData = {
+                                type, id, parentId: parentId || null, userLabel: label,
+                                length: parseFloat(len), length2: parseFloat(len2),
+                                parallelCount: parseFloat(par), tapPower: parseFloat(tap),
+                                useBridgeMode: bridge === '1',
+                                ampId: resolveDevice('amplifiers', aId, aB, aM) || (aM ? findIdByProps('amplifiers', aB, aM) : null),
+                                spkId: resolveDevice('speakers', sId, sB, sM),
+                                cabId: resolveDevice('cables', cId, cB, cM),
+                                cab2Id: (c2Id || c2M) ? resolveDevice('cables', c2Id, c2B, c2M) : null
+                            };
+
+                        } else if (cols.length >= 16) {
+                            // V2.1/2.2 Format
+                            const [type, id, parentId, label, aB, aM, sB, sM, cB, cM, len, c2B, c2M, len2, par, tap, bridge] = cols;
+                            nodeData = {
+                                type, id, parentId: parentId || null, userLabel: label,
+                                length: parseFloat(len), length2: parseFloat(len2),
+                                parallelCount: parseFloat(par), tapPower: parseFloat(tap),
+                                useBridgeMode: bridge === '1',
+                                ampId: findIdByProps('amplifiers', aB, aM) || aM,
+                                spkId: findIdByProps('speakers', sB, sM),
+                                cabId: findIdByProps('cables', cB, cM),
+                                cab2Id: (c2B || c2M) ? findIdByProps('cables', c2B, c2M) : null
+                            };
+                        } else if (cols.length >= 12) {
+                            // V2.0 Legacy
+                            const [type, id, parentId, label, aId, sId, cId, len, c2Id, len2, par, tap, bridge] = cols;
+                            nodeData = {
+                                type, id, parentId: parentId || null, userLabel: label,
+                                length: parseFloat(len), length2: parseFloat(len2),
+                                parallelCount: parseFloat(par), tapPower: parseFloat(tap),
+                                useBridgeMode: bridge === '1',
+                                ampId: aId, spkId: sId, cabId: cId, cab2Id: c2Id
+                            };
+                        } else { continue; }
+
+                        if ((!nodeData.parentId && !database.amplifiers[nodeData.ampId]) || !database.speakers[nodeData.spkId] || !database.cables[nodeData.cabId]) {
+                            continue;
+                        }
 
                         const node = {
-                            id: cols[1],
-                            parentId: cols[2] || null,
-                            userLabel: cols[3],
-                            speakerModel: cols[5],
-                            cableModel: cols[6],
-                            length: parseFloat(cols[7]),
-                            cableModel2: cols[8],
-                            length2: parseFloat(cols[9]),
-                            parallelCount: parseFloat(cols[10]),
-                            tapPower: parseFloat(cols[11]),
-                            ampModel: cols[4],
-                            useBridgeMode: cols[12] === '1',
-                            inputs: {},
-                            children: [], results: {},
-                            type: cols[0]
+                            id: nodeData.id, parentId: nodeData.parentId, userLabel: nodeData.userLabel,
+                            speakerModel: nodeData.spkId, cableModel: nodeData.cabId, length: nodeData.length,
+                            cableModel2: nodeData.cab2Id, length2: nodeData.length2,
+                            parallelCount: nodeData.parallelCount, tapPower: nodeData.tapPower,
+                            ampModel: nodeData.ampId, useBridgeMode: nodeData.useBridgeMode,
+                            inputs: {}, children: [], results: {}, type: nodeData.type
                         };
                         
                         node.inputs = {
@@ -499,25 +711,27 @@ const app = createApp({
                             cableModel: node.cableModel, length: node.length,
                             cableModel2: node.cableModel2, length2: node.length2,
                             parallelCount: node.parallelCount, tapPower: node.tapPower,
-                            useBridgeMode: node.useBridgeMode,
-                            hasTapCable: !!node.cableModel2
+                            useBridgeMode: node.useBridgeMode, hasTapCable: !!node.cableModel2
                         };
                         
-                        nodes.push(node);
-                    }
-
-                    nodes.forEach(n => {
-                        const targetList = n.type === 'Low-Z' ? lowZRoots.value : highVRoots.value;
-                        if(!n.parentId) {
-                            targetList.push(n);
+                        const targetList = node.type === 'Low-Z' ? lowZRoots.value : highVRoots.value;
+                        if(!node.parentId) {
+                            targetList.push(node);
                         } else {
-                            const parent = nodes.find(p => p.id === n.parentId);
+                            const findParent = (nodes) => {
+                                for(let n of nodes) {
+                                    if(n.id === node.parentId) return n;
+                                    if(n.children) { const found = findParent(n.children); if(found) return found; }
+                                }
+                                return null;
+                            };
+                            const parent = findParent(targetList);
                             if(parent) {
                                 if(!parent.children) parent.children = [];
-                                parent.children.push(n);
+                                parent.children.push(node);
                             }
                         }
-                    });
+                    }
                     
                     calculateAll();
                     alert("Project Loaded Successfully.");
@@ -527,7 +741,6 @@ const app = createApp({
             r.readAsText(file);
         };
 
-        // --- DB Logic ---
         const saveDbItem = () => {
             const type = dbTab.value;
             const id = dbForm.id;
@@ -568,7 +781,6 @@ const app = createApp({
             else alert("Import input not initialized.");
         };
         
-        // UPDATED: Import handler that generates unique IDs
         const handleDbImport = (e) => {
              const file = e.target.files[0]; if(!file) return;
              const r = new FileReader();
@@ -579,34 +791,75 @@ const app = createApp({
                  const headers = lines[0].split(',').map(h => h.replace(/['"]+/g, '').trim().toLowerCase());
                  let c=0;
                  
+                 const tapsIdx = headers.indexOf('taps');
+                 const validKeywords = ['Lo-Z', '100V', 'Both', 'Active'];
+
                  for(let i=1; i<lines.length; i++) {
                      const line = lines[i].trim();
                      if(!line) continue;
                      const vals = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                     
                      if(vals.length >= headers.length) {
-                         // 1. Capture Model Name
-                         const modelName = vals[0].replace(/['"]+/g, '').trim();
+                         let modelName = vals[0].replace(/['"]+/g, '').trim();
                          if(!modelName) continue;
 
-                         // 2. Generate Unique ID
                          let newId;
                          do {
                              newId = Math.floor(10000 + Math.random() * 90000).toString();
                          } while (database[dbTab.value][newId]);
 
                          const obj={};
-                         // 3. Save Model Name explicitly
-                         obj.model = modelName;
+                         obj.model = modelName; 
 
                          const dbKeys = Object.keys(DEFAULT_DATABASE[dbTab.value][Object.keys(DEFAULT_DATABASE[dbTab.value])[0]]);
                          
+                         // SMART COLUMN ALIGNMENT (SCAN FOR TYPE)
+                         // If columns shifted due to taps, find 'type' by looking for keywords
+                         let typeShiftIndex = -1;
+                         if (dbTab.value === 'speakers' && vals.length > headers.length) {
+                             // Scan from the end backwards to find type
+                             for(let k=vals.length-1; k >= 0; k--) {
+                                 const val = vals[k].replace(/['"]+/g, '').trim();
+                                 if(validKeywords.includes(val)) {
+                                     typeShiftIndex = k;
+                                     break;
+                                 }
+                             }
+                         }
+
                          dbKeys.forEach(key => {
                              const idx = headers.indexOf(key.toLowerCase());
                              if(idx > 0) {
-                                 let val = vals[idx].replace(/['"]+/g, '').trim();
+                                 let val = '';
+                                 
+                                 // SPECIAL LOGIC FOR SPEAKERS WITH SHIFTED COLS
+                                 if (dbTab.value === 'speakers' && typeShiftIndex !== -1) {
+                                     const typeHeaderIdx = headers.indexOf('type');
+                                     const catHeaderIdx = headers.indexOf('category');
+                                     
+                                     if (key.toLowerCase() === 'taps') {
+                                         // Taps is everything between start of taps and type
+                                         const endOfTaps = typeShiftIndex; 
+                                         val = vals.slice(tapsIdx, endOfTaps).join(',').replace(/['"]+/g, '').trim();
+                                     } else if (key.toLowerCase() === 'type') {
+                                         val = vals[typeShiftIndex].replace(/['"]+/g, '').trim();
+                                     } else if (key.toLowerCase() === 'category') {
+                                         // Category is usually after type
+                                         if (typeShiftIndex + 1 < vals.length) {
+                                             val = vals[typeShiftIndex + 1].replace(/['"]+/g, '').trim();
+                                         }
+                                     } else if (idx < tapsIdx) {
+                                         // Fields before taps are safe
+                                         val = vals[idx].replace(/['"]+/g, '').trim();
+                                     }
+                                 } else {
+                                     // Normal processing
+                                     val = vals[idx].replace(/['"]+/g, '').trim();
+                                 }
+
                                  const isNumericField = !['brand', 'taps', 'model', 'type', 'category'].includes(key.toLowerCase());
                                  const looksLikeNumber = /^-?\d*(\.\d+)?$/.test(val);
-                                 if(isNumericField && looksLikeNumber) val = parseFloat(val);
+                                 if(isNumericField && looksLikeNumber && val !== '') val = parseFloat(val);
                                  obj[key] = val;
                              }
                          });
@@ -628,21 +881,21 @@ const app = createApp({
         
         const getStatusClass = (s) => s==='OK'?'badge-ok':(s==='Warning'?'badge-warn':'badge-danger');
 
-        // --- PDF ---
+        // --- PDF GENERATION ---
         const generatePdf = () => {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
+            const doc = new jsPDF('l', 'mm', 'a4');
             
-            doc.setFillColor(24, 24, 27); doc.rect(0,0,210,25,'F');
+            doc.setFillColor(24, 24, 27); doc.rect(0,0,297,25,'F');
             doc.setTextColor(255); doc.setFontSize(14); doc.text("Audio Systems Design Report", 14, 12);
-            doc.setFontSize(8); doc.text(`Generated by Speaker Design Tool ${APP_VERSION}`, 14, 18);
+            doc.setFontSize(8); doc.text(`Generated by Speaker Design Tool ${APP_VERSION} | Standard: ${QUALITY_PROFILES[qualityMode.value].label}`, 14, 18);
             
             doc.setTextColor(0); doc.setFontSize(10);
             let y = 40;
             doc.text(`Project: ${project.name}`, 14, y);
             doc.text(`Company: ${reportForm.company}`, 14, y+6);
             doc.text(`Designer: ${reportForm.designer}`, 14, y+12);
-            doc.text(`Date: ${new Date().toLocaleDateString()}`, 140, y);
+            doc.text(`Date: ${new Date().toLocaleDateString()}`, 250, y);
             y += 20;
 
             const bom = {};
@@ -699,17 +952,23 @@ const app = createApp({
                     const len2 = n.inputs?.length2 || n.length2;
                     
                     const deviceName = getDeviceLabel('speakers', n.speakerModel);
-                    const label = n.userLabel ? `(${n.userLabel}) ` : '';
+                    const label = n.userLabel || '';
+                    
+                    const sourceLabel = !n.parentId ? getDeviceLabel('amplifiers', n.ampModel) : n.parentId;
+                    const loadDetail = mode === 'low-z' ? `${n.parallelCount}x Parallel` : `${n.tapPower}W Tap`;
+                    const detailsStr = `${sourceLabel} | ${loadDetail}`;
 
-                    let cableStr = `${len}m`;
-                    if(len2) cableStr += ` + ${len2}m`;
+                    let cableStr = `${getDeviceLabel('cables', n.cableModel)} (${len}m)`;
+                    if(len2) cableStr += ` + ${getDeviceLabel('cables', n.cableModel2)} (${len2}m)`;
 
                     r.push([
-                        n.id, label + deviceName, 
+                        n.id, 
+                        label, 
+                        deviceName + '\n' + detailsStr, 
                         cableStr,
                         mode==='low-z' ? `${res.minLoad?.toFixed(2)}Ω` : `${res.totalPower?.toFixed(1)}W`,
                         mode==='low-z' ? `${res.nomLoad?.toFixed(2)}Ω` : '-',
-                        mode==='low-z' ? `${res.dropPercent?.toFixed(2)}%` : `${res.voltageAtSpeaker?.toFixed(1)}V`,
+                        mode==='low-z' ? `${res.dropPercent?.toFixed(2)}%` : `${res.dropVolts?.toFixed(1)}V`,
                         `${res.powerLoss?.toFixed(1)}W`,
                         mode==='low-z' ? `${res.splLoss?.toFixed(2)}dB` : `${res.voltageAtSpeaker?.toFixed(1)}V`,
                         res.status
@@ -720,14 +979,18 @@ const app = createApp({
                 return r;
             };
 
+            const headersLowZ = [['ID','Name','Details','Cable','Min Load (Z)','Nom Load','V Drop %','P Loss','Elec. Loss','Status']];
+            const headersHighV = [['ID','Name','Details','Cable','Total Power','-','V Drop V','P Loss','V @ Spk','Status']];
+
             if(lowZRoots.value.length > 0) {
                 doc.text("Low-Impedance Systems", 14, y);
                 doc.autoTable({
                     startY: y+5,
-                    head: [['ID','Device','Cable','Min Load','Nom Load','V.Drop','Loss','Elec. Loss','Status']],
+                    head: headersLowZ,
                     body: buildRows(lowZRoots.value, 'low-z'),
                     headStyles: { fillColor: [63, 63, 70] },
-                    styles: { fontSize: 8 }
+                    styles: { fontSize: 7 },
+                    columnStyles: { 2: { cellWidth: 50 }, 3: { cellWidth: 40 } }
                 });
                 y = doc.lastAutoTable.finalY + 15;
             }
@@ -736,16 +999,18 @@ const app = createApp({
                 doc.text("100V Systems", 14, y);
                 doc.autoTable({
                     startY: y+5,
-                    head: [['ID','Device','Cable','Power','-','V @ Tap','Loss','V @ Speaker','Status']],
+                    head: headersHighV,
                     body: buildRows(highVRoots.value, 'high-v'),
                     headStyles: { fillColor: [63, 63, 70] },
-                    styles: { fontSize: 8 }
+                    styles: { fontSize: 7 },
+                    columnStyles: { 2: { cellWidth: 50 }, 3: { cellWidth: 40 } }
                 });
             }
             doc.save(`${project.name || 'Audio_System'}_Report.pdf`);
         };
 
         watch(globalSettings, calculateAll, { deep: true });
+        watch(qualityMode, calculateAll); 
         watch(database, (v) => localStorage.setItem('sdt_database_v2', JSON.stringify(v)), { deep: true });
 
         onMounted(() => {
@@ -761,7 +1026,8 @@ const app = createApp({
 
         return {
             APP_VERSION, database, globalSettings, project, reportForm, 
-            currentView, calculatorMode, dbTab, dbEditMode, dbForm, inputForm,
+            currentView, calculatorMode, qualityMode, QUALITY_PROFILES, currentProfile,
+            dbTab, dbEditMode, dbForm, inputForm,
             activeRootNodes, activeFlatList, flatLowZList, flatHighVList, 
             speakerOptions, cableOptions, ampOptions, currentDbData, reportSummary,
             dbImportInput, projectImportInput, getDeviceLabel, 
