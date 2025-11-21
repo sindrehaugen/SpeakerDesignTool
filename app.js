@@ -3,6 +3,7 @@
  * Changes: 
  * - Version bump to v2.0.2
  * - Consolidated features: Project Save/Load, Headroom Checks, "Error" status.
+ * - Added Unique ID generation on DB Import to handle duplicate model names.
  */
 
 const { createApp, reactive, computed, watch, onMounted, ref } = Vue;
@@ -59,8 +60,11 @@ const app = createApp({
             for (const [id, s] of Object.entries(database.speakers)) {
                 if (s.type === 'Both' || s.type === m) {
                     const brand = s.brand ? s.brand : 'Generic';
+                    // Use the saved model name if available, otherwise fallback to ID
+                    const name = s.model || id; 
                     const detail = m === 'Lo-Z' ? `${s.impedance}Ω` : '100V';
-                    list.push({ id: id, label: `${brand} - ${id} (${detail})` });
+                    // ID is still used as the value, but label shows the friendly name
+                    list.push({ id: id, label: `${brand} - ${name} (${detail})` });
                 }
             }
             return list.sort((a,b) => a.label.localeCompare(b.label));
@@ -83,10 +87,11 @@ const app = createApp({
             const list = [];
             for (const [id, a] of Object.entries(database.amplifiers)) {
                 const brand = a.brand ? a.brand : 'Generic';
+                const name = a.model || id; // Use model name if available
                 let details = calculatorMode.value === 'low-z' 
                     ? `${a.watt_8}W@8Ω` 
                     : `${a.watt_100v || a.watt_8}W@100V`;
-                list.push({ id: id, label: `${brand} - ${id} (${details})` });
+                list.push({ id: id, label: `${brand} - ${name} (${details})` });
             }
             return list.sort((a,b) => a.label.localeCompare(b.label));
         });
@@ -120,7 +125,8 @@ const app = createApp({
             if (!id) return '-';
             if (!database[type]) return id;
             const item = database[type][id];
-            return item ? `${item.brand} ${id}` : id;
+            // Display Model name preferentially over the ID
+            return item ? `${item.brand} ${item.model || id}` : id;
         };
 
         // --- COMPLEX MATH HELPERS ---
@@ -562,6 +568,7 @@ const app = createApp({
             else alert("Import input not initialized.");
         };
         
+        // UPDATED: Import handler that generates unique IDs
         const handleDbImport = (e) => {
              const file = e.target.files[0]; if(!file) return;
              const r = new FileReader();
@@ -577,9 +584,20 @@ const app = createApp({
                      if(!line) continue;
                      const vals = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                      if(vals.length >= headers.length) {
-                         const id = vals[0].replace(/['"]+/g, '').trim();
-                         if(!id) continue;
+                         // 1. Capture Model Name
+                         const modelName = vals[0].replace(/['"]+/g, '').trim();
+                         if(!modelName) continue;
+
+                         // 2. Generate Unique ID
+                         let newId;
+                         do {
+                             newId = Math.floor(10000 + Math.random() * 90000).toString();
+                         } while (database[dbTab.value][newId]);
+
                          const obj={};
+                         // 3. Save Model Name explicitly
+                         obj.model = modelName;
+
                          const dbKeys = Object.keys(DEFAULT_DATABASE[dbTab.value][Object.keys(DEFAULT_DATABASE[dbTab.value])[0]]);
                          
                          dbKeys.forEach(key => {
@@ -592,7 +610,8 @@ const app = createApp({
                                  obj[key] = val;
                              }
                          });
-                         database[dbTab.value][id] = obj; 
+                         
+                         database[dbTab.value][newId] = obj; 
                          c++;
                      }
                  }
