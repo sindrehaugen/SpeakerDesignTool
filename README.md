@@ -1,72 +1,109 @@
-# **Speaker Design Tool v2.3.6**
+**## Speaker Design Tool v3.0**
 
-*Download ZIP-file:* https://github.com/sindrehaugen/SpeakerDesignTool/archive/refs/heads/main.zip
+  
 
-A professional-grade, browser-based calculator for designing Low-Impedance (Low-Z) and High-Impedance (100V) audio systems.
+**A professional-grade, browser-based simulation engine for designing Low-Impedance (Low-Z) and Distributed (100V/70V) audio systems.**
 
-## **📖 Overview**
+[**Download Latest Version**](https://github.com/sindrehaugen/SpeakerDesignTool/archive/refs/heads/main.zip)
 
-The **Speaker Design Tool** bridges the gap between electrical engineering and audio system design. It features a comprehensive **Physics Engine** that simulates the electrical signal chain: from the amplifier, through the complex impedance of cabling (thermal & reactive), to the electrical voltage at the speaker terminals.
+-----
 
-Designed for AV integrators and system designers, it ensures your designs meet critical performance and safety standards before installation begins.
+## 📖 Overview
 
-## **✨ Key Features**
+The **Speaker Design Tool** bridges the gap between theoretical electrical engineering and practical audio system design. Unlike simple calculators that only look at DC resistance, this tool features a comprehensive **Physics Engine** that simulates the entire electrical signal chain.
 
-### **🚀 Advanced Physics Engine**
-* **Complex Impedance Modeling:** Calculates $Z = \sqrt{R^2 + X_L^2}$ rather than just DC resistance ($R$), ensuring accuracy for long cable runs and high frequencies.
-* **Thermal Derating:** Simulates the increase in copper resistance due to ambient temperature rise (0.393% per °C).
-* **High-Frequency Loss Analysis:** Calculates audible treble roll-off caused by cable capacitance ($C$) acting as a low-pass filter.
-* **Dynamic Headroom Analysis:** Automatically warns if the total speaker load exceeds safe amplifier capacity relative to the chosen Quality Standard.
+From the amplifier rack to the speaker voice coil, it models complex cable impedance (thermal & reactive), voltage drops, and frequency-dependent losses. Designed for AV integrators and consultants, it ensures designs meet critical performance and safety standards (IEC 60268-3) before a single cable is pulled.
 
-### **🛠️ Professional Workflow**
-* **Three Quality Standards:**
-    * **High-End:** Strict limits for critical listening and concert audio (< 5% Drop).
-    * **Average:** Balanced settings for commercial BGM and retail (< 10% Drop).
-    * **Speech:** Optimized for intelligibility and paging systems (< 15-25% Drop).
-* **Dual Topology Calculator:**
-    * **Low-Z Mode:** Tracks Min/Nom Load, Voltage Drop, Damping Factor, and Electrical dB Loss.
-    * **100V Mode:** Tracks Transformer Saturation risks, Voltage at Tap, and Total Power.
-* **Smart Project Portability:**
-    * **Robust CSV Import:** Automatically resolves conflicts if device IDs change between computers.
-    * **Data Verification:** Checks Brand/Model names against your database to ensure data integrity.
-* **Database Manager:** Full CRUD (Create, Read, Update, Delete) support with CSV bulk import/export.
+-----
 
-## **📐 Technical Standards & Thresholds**
+## ✨ What's New in v3.0
+
+  * **Recursive Calculation Engine:** Now supports infinite "Daisy Chain" depth with hierarchical ID generation (`L-1`, `L-1.1`, `L-1.2`).
+  * **Advanced Reporting Suite:**
+      * **PDF:** Client-ready reports with custom logos, project summaries, and visual status indicators.
+      * **Excel/BOM:** One-click export of Bill of Materials and Cabling Schedules.
+  * **Scientific Deep Dive:** Integrated technical reference view explaining the math behind audio transmission.
+  * **Cable Wizard:** Brute-force simulation to automatically find the most cost-effective cable that meets your voltage drop targets.
+
+-----
+
+## 🚀 Key Features
+
+### 1\. Advanced Physics Engine
+
+  * **Complex Impedance Modeling:** Calculates $Z = R + jX_L$ rather than just Resistance ($R$). This ensures accuracy for long cable runs where inductance causes high-frequency roll-off.
+  * **Thermal Thermodynamics:** Automatically applies linear thermal derating to copper cabling based on ambient temperature inputs (0.393% resistance increase per °C).
+  * **Dynamic Headroom Analysis:** Monitors amplifier loading in real-time, warning of clipping risks or low damping factors.
+
+### 2\. Dual Topology Support
+
+  * **Low-Z Mode (4Ω/8Ω):**
+      * Tracks Minimum vs. Nominal Load.
+      * Calculates Damping Factor at the speaker terminal.
+      * Bridge Mode (BTL) support.
+  * **High-V Mode (100V/70V):**
+      * Tracks Transformer Saturation risks.
+      * Calculates exact voltage at every tap.
+      * Total Power summation.
+
+### 3\. Smart Database & Portability
+
+  * **Embedded Database:** Includes `speakers_db.csv`, `amplifiers_db.csv`, and `cables_db.csv` with specs from major manufacturers (Bose, QSC, Yamaha, Audac, etc.).
+  * **CRUD Management:** Add, Edit, or Delete equipment directly within the browser.
+  * **Smart Save:** Projects are saved as `.json` files. You can choose to **bundle your database** inside the save file, ensuring the project works on any computer regardless of their local library.
+
+-----
+
+## 📐 Technical Standards
 
 The tool evaluates your design dynamically based on your selected **Quality Standard**:
 
-| Metric | High-End (Reference) | Average (Commercial) | Speech Only (Paging) | Impact |
+| Metric | High-End (Reference) | Average (BGM) | Speech (Paging) | Impact |
 | :--- | :--- | :--- | :--- | :--- |
-| **Voltage Drop** | **Warning:** > 5%<br>**Error:** > 10% | **Warning:** > 10%<br>**Error:** > 20% | **Warning:** > 15%<br>**Error:** > 25% | Dynamics, Headroom, Saturation |
-| **Damping Factor** | **Warning:** < 20<br>**Error:** < 10 | **Warning:** < 10<br>**Error:** < 5 | **Warning:** < 5<br>**Error:** < 2 | Bass tightness, Transient response |
-| **Headroom Safety** | **Limit:** 80% Load | **Limit:** 90% Load | **Limit:** 95% Load | Amplifier Clipping/Shutdown |
-| **HF Check Freq** | 10 kHz | 6 kHz | 4 kHz | Treble Roll-off / Clarity |
+| **Voltage Drop** | Warning: \> 5% <br> Error: \> 7.5% | Warning: \> 10% <br> Error: \> 15% | Warning: \> 15% <br> Error: \> 22.5% | Dynamics, Compression |
+| **Damping Factor** | Warning: \< 20 <br> Error: \< 10 | Warning: \< 10 <br> Error: \< 5 | Warning: \< 5 <br> Error: \< 2 | Bass Tightness |
+| **HF Check Freq** | 10 kHz | 6 kHz | 4 kHz | Clarity / "Air" |
 
-## **📚 Included Database Library**
+-----
 
-The distribution includes extensive database files (`speakers_db.csv`, `amplifiers_db.csv`, `cables_db.csv`) that you can import to instantly populate your library. These files contain specifications for professional equipment from many major brands, including:
+## 🧮 The Math
 
-**Amadeus Labs, Audac, Biamp, Blaze Audio, Bose Professional, Crown, EAW, JBL, K-array, Lab Gruppen, LD Systems, LEA Professional, Martin Audio, Powersoft, QSC, Yamaha**, and more.
+We utilize vector mathematics to account for phase angles between the inductive cable properties and the resistive load.
 
-## **🧮 Math & Formulas**
+1.  **Thermal Resistance ($R_{hot}$):**
+    $$R_{hot} = R_{20} \cdot [1 + 0.00393 \cdot (T_{amb} - 20)]$$
+2.  **Complex Impedance ($Z$):**
+    $$Z_{cable} = R_{hot} + j \cdot (2\pi \cdot f \cdot L)$$
+3.  **Electrical SPL Loss:**
+    $$L_{dB} = 20 \cdot \log_{10} \left( \frac{V_{load}}{V_{source}} \right)$$
 
-We calculate voltage drop using vector math to account for phase angles between the inductive cable and resistive load.
+-----
 
-* **Cable Resistance ($R_{hot}$):** $R_{20} \cdot (1 + 0.00393 \cdot (T_{amb} - 20))$
-* **Inductive Reactance ($X_L$):** $2 \cdot \pi \cdot f \cdot L$
-* **Total Impedance ($Z$):** $\sqrt{R_{hot}^2 + X_L^2}$
-* **Electrical SPL Loss:** $20 \cdot \log_{10}(V_{load} / V_{source})$
+## 🛠️ Quick Start
 
-## **🚀 Quick Start**
+1.  **Download:** Get the latest release and unzip the folder.
+2.  **Launch:** Open `Speaker Design Tool.html` in any modern web browser (Chrome, Edge, Firefox, Safari). No internet connection or installation required.
+3.  **Configure:** Set your project name and ambient temperature (e.g., 40°C for ceiling voids).
+4.  **Build:**
+      * Select **Low-Z** or **100V** mode.
+      * Add an Amplifier.
+      * Add a Speaker Line.
+      * Use the **Down Arrow (↓)** to daisy-chain speakers.
+5.  **Analyze:** Watch the dashboard for colored Status indicators. Use the **Cable Wizard (🪄)** to fix voltage drop issues.
+6.  **Export:** Go to the **Reports** tab to generate your PDF documentation or Excel BOM.
 
-1.  **Configure:** Set your **Project Name** and **Ambient Temperature** (top bar).
-2.  **Select Standard:** Choose **High-End**, **Average**, or **Speech** based on the venue type.
-3.  **Select Mode:** Toggle between **Low-Z** and **100V**.
-4.  **Build:** Select an amplifier and start adding speakers.
-    * **Daisy Chaining:** To chain speakers, add a new calculation and set the "Source" dropdown to the ID of the previous speaker.
-5.  **Analyze:** Watch the live dashboard for **Warnings** or **Errors**.
-6.  **Report:** Go to the **Reports** tab to generate a comprehensive PDF documentation package.
+-----
 
-## **📄 License**
+## 📦 Included Library
+
+The tool comes pre-populated with specifications for professional equipment from:
+
+  * **Speakers:** Audac, Biamp, Bose Professional, Blaze Audio, EAW, JBL Professional, K-array, LD Systems, Martin Audio, QSC, Sonance, Yamaha.
+  * **Amplifiers:** Crown, LEA Professional, Powersoft, Lab Gruppen, Dynacord.
+  * **Cables:** Belden, Canare, Klotz, Sommer, Van Damme, West Penn.
+
+-----
+
+## 📄 License
 
 This project is licensed under the **GNU General Public License v3.0 (GPLv3)**. You are free to use, modify, and distribute this software.
