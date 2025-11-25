@@ -75,7 +75,9 @@
                 min_load_bridge: 4,
                 watt_bridge_8: 1000,
                 watt_bridge_4: 0,
-                max_voltage_peak: 63.2
+                max_voltage_peak: 63.2,
+                channels_lowz: 2, // Added default channels
+                channels_100v: 2
             }
         }
     };
