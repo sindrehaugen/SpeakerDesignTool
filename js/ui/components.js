@@ -1,6 +1,6 @@
 /**
  * Speaker Design Tool v3.0 - UI Components
- * Status: Production Ready
+ * Status: Final Production Ready
  */
 
 (function () {
@@ -59,7 +59,7 @@
                         <div v-for="amp in filteredAmps" :key="amp.id" @click="$emit('select', amp.id)" class="group flex items-center justify-between p-3 rounded hover:bg-zinc-700 cursor-pointer transition-colors border-b border-zinc-700/50 last:border-0">
                             <div>
                                 <div class="text-sm font-bold text-white">{{ amp.brand }} <span class="text-emerald-400">{{ amp.model }}</span></div>
-                                <div class="text-[10px] text-zinc-400 mt-0.5">{{ amp.watt_8 }}W @ 8Ω | {{ amp.channels_lowz || 4 }}ch Low-Z | {{ amp.channels_100v || 0 }}ch 100V</div>
+                                <div class="text-[10px] text-zinc-400 mt-0.5">{{ amp.watt_8 }}W @ 8Ω | {{ amp.channels_lowz || '?' }}ch Low-Z | {{ amp.channels_100v || '?' }}ch 100V</div>
                             </div>
                             <button class="px-3 py-1 bg-zinc-900 group-hover:bg-emerald-600 text-xs font-bold rounded text-zinc-300 group-hover:text-white transition-colors">Select</button>
                         </div>
@@ -135,6 +135,7 @@
                     <div class="px-6 py-4 border-b border-zinc-700 bg-zinc-900/50 rounded-t-xl">
                         <h3 class="text-lg font-bold text-white flex items-center gap-2"><span class="text-amber-400">⚠️</span> Update Data</h3>
                         <p class="text-xs text-zinc-400 mt-1">Missing specifications for <span class="text-white font-bold">{{ title }}</span>.</p>
+                        <p v-if="instruction" class="text-[10px] text-emerald-400 mt-2 italic border-l-2 border-emerald-500 pl-2">{{ instruction }}</p>
                     </div>
                     <div class="p-6 space-y-4 overflow-y-auto max-h-[60vh]">
                         <div v-for="field in fields" :key="field.key">
@@ -151,6 +152,9 @@
         props: ['visible', 'fields', 'title', 'initialData'],
         emits: ['save'],
         data() { return { formData: {} } },
+        computed: {
+            instruction() { return window.App.State?.missingDataInstruction || "Please enter '0' if a field is not applicable."; }
+        },
         watch: { visible(newVal) { if (newVal) this.formData = { ...this.initialData }; } }
     };
 
@@ -291,14 +295,16 @@
             isLowZ() { return this.state.mode === 'low-z'; },
             ampInstances() { return Object.values(this.state.ampRack).map(inst => ({ id: inst.id, modelName: `${this.db.amplifiers[inst.modelId]?.brand || 'Generic'} ${this.db.amplifiers[inst.modelId]?.model || inst.modelId}` })); },
             
-            // --- SMART CHANNEL LOGIC ---
+            // --- SMART CHANNEL LOGIC (SAFER DEFAULT) ---
             availableChannelOptions() {
                 if (!this.node.ampInstanceId || !this.state.ampRack[this.node.ampInstanceId]) return [];
                 const inst = this.state.ampRack[this.node.ampInstanceId];
                 const model = this.db.amplifiers[inst.modelId];
                 if (!model) return [];
 
-                const totalPhys = parseInt(this.isLowZ ? (model.channels_lowz || 4) : (model.channels_100v || 4));
+                // Default to 2 channels (Stereo) if undefined
+                const totalPhys = parseInt(this.isLowZ ? (model.channels_lowz || 2) : (model.channels_100v || 2));
+                
                 const usedChannels = new Set();
                 const nodes = this.state.mode === 'low-z' ? this.state.lowZRoots : this.state.highVRoots;
                 
@@ -334,7 +340,7 @@
                 if (!this.node.ampInstanceId) return '';
                 const inst = this.state.ampRack[this.node.ampInstanceId];
                 const model = this.db.amplifiers[inst.modelId];
-                const count = this.isLowZ ? (model.channels_lowz || 4) : (model.channels_100v || 4);
+                const count = this.isLowZ ? (model.channels_lowz || 2) : (model.channels_100v || 2);
                 return `Max Channels: ${count}`;
             },
 
