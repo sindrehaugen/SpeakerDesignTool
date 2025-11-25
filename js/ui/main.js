@@ -1,7 +1,7 @@
 /**
  * Speaker Design Tool v3.0 - Main Entry
  * Status: Production Ready
- * Fixes: Added Channel Count to Amplifier Validation
+ * Fixes: Cable Cross-Section Validation, DB Auto-Save Logic
  */
 
 (function () {
@@ -33,6 +33,7 @@
                 if(p) Object.assign(state.reportInfo, p); 
             } catch(e){}
 
+            // Watchers ensure updates (like missing data fixes) are written to LocalStorage automatically
             watch(()=>state.database,(v)=>localStorage.setItem('sdt_database_v3',JSON.stringify(v)),{deep:true});
             watch(()=>state.reportInfo,(v)=>localStorage.setItem('sdt_user_prefs',JSON.stringify(v)),{deep:true});
 
@@ -222,14 +223,13 @@
                 saveProject() { showSaveModal.value = true; },
                 handleSaveSelect(includeDb) { window.App.Utils.IO.exportProjectJSON(state, includeDb); showSaveModal.value = false; },
 
-                // --- EQUIPMENT VALIDATION ---
+                // --- VALIDATION LOGIC (UPDATED) ---
                 validateEquipment(type, id) {
                     if (!id || id.startsWith('Default')) return;
                     
                     const item = state.database[type][id];
                     const missingFields = [];
                     
-                    // Defined checks per type
                     const checks = {
                         speakers: [
                             { key: 'impedance', label: 'Impedance (Ω)' },
@@ -239,14 +239,15 @@
                         cables: [
                             { key: 'resistance', label: 'Resistance (Ω/km)' },
                             { key: 'capacitance', label: 'Capacitance (pF/m)' },
-                            { key: 'inductance', label: 'Inductance (µH/m)' }
+                            { key: 'inductance', label: 'Inductance (µH/m)' },
+                            { key: 'crossSection', label: 'Cross Section (mm²)' } // Added this check
                         ],
                         amplifiers: [
                             { key: 'watt_8', label: 'Power 8Ω (W)' },
                             { key: 'watt_4', label: 'Power 4Ω (W)' },
                             { key: 'watt_100v', label: 'Power 100V (W)' },
                             { key: 'df', label: 'Damping Factor' },
-                            { key: 'channels_lowz', label: 'Channels (Low-Z)' } // Added Check
+                            { key: 'channels_lowz', label: 'Channels (Low-Z)' }
                         ]
                     };
 
@@ -257,9 +258,7 @@
                     } else {
                         targetChecks.forEach(field => {
                             const val = item[field.key];
-                            // Check for undefined, null, or empty strings. 
-                            // We allow 0, but key fields like resistance shouldn't be 0 ideally.
-                            // For safety, we flag it if it's strictly undefined/null or empty string.
+                            // Check for undefined, null, or empty string
                             if (val === undefined || val === null || val === '') {
                                 missingFields.push(field);
                             }
@@ -271,9 +270,9 @@
                         missingDataState.instruction = "Some technical specifications are missing. Please enter '0' if a field is not applicable to this product.";
                         missingDataState.fields = missingFields;
                         
-                        missingDataState.initialData = item ? { ...item } : { id: id, brand: 'Unknown', model: 'Imported', type: type };
+                        // Inject 'type' into initialData so saveMissingData knows where to save it
+                        missingDataState.initialData = item ? { ...item, type: type } : { id: id, brand: 'Unknown', model: 'Imported', type: type };
                         
-                        // Ensure fields exist for reactivity
                         missingFields.forEach(f => {
                             if (missingDataState.initialData[f.key] === undefined) {
                                 missingDataState.initialData[f.key] = null; 
@@ -285,13 +284,16 @@
                 },
                 
                 saveMissingData(formData) {
-                    let type = 'speakers';
-                    if (formData.type) type = formData.type;
-                    else if (formData.resistance !== undefined) type = 'cables';
-                    else if (formData.watt_8 !== undefined) type = 'amplifiers';
+                    // Use the type we explicitly injected during validation
+                    const type = formData.type || 'speakers';
                     
                     if (!state.database[type]) state.database[type] = {};
-                    state.database[type][formData.id] = formData;
+                    
+                    // Update database state
+                    state.database[type][formData.id] = { ...formData };
+                    
+                    // LocalStorage watcher will automatically persist this change
+                    
                     missingDataState.visible = false;
                     actions.calculateAll();
                 },
@@ -305,10 +307,7 @@
                         n.ampInstanceId=cid; 
                         n.ampChannel=null; 
                         showAmpModal.value=false;
-                        
-                        // Trigger validation
                         actions.validateEquipment('amplifiers', id);
-                        
                         actions.calculateAll();
                     } 
                 },
@@ -357,6 +356,7 @@
 
                 setMode(m) { state.mode=m; actions.calculateAll(); },
 
+                // --- CALCULATION ENGINE ---
                 calculateAll() {
                     const db = state.database;
                     const profile = window.App.Core.Database.PROFILES[state.qualityMode];
