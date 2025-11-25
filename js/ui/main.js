@@ -1,7 +1,7 @@
 /**
  * Speaker Design Tool v3.0 - Main Entry
  * Status: Production Ready
- * Fixes: Sequential Hierarchical IDs (L-1, L-1.1), Version Reset
+ * Fixes: Missing Data Modal logic, Sequential Hierarchical IDs
  */
 
 (function () {
@@ -28,7 +28,6 @@
                 highVRoots: []
             });
 
-            // Persist Preferences
             try { 
                 const p = JSON.parse(localStorage.getItem('sdt_user_prefs')); 
                 if(p) Object.assign(state.reportInfo, p); 
@@ -45,7 +44,6 @@
             const wizardState = reactive({ visible: false, candidates: [], limit: 5 }); 
             const missingDataState = reactive({ visible: false, title: '', fields: [], initialData: {} });
             
-            // Expose globally
             window.App.State = state; 
             window.App.Actions = {};
 
@@ -104,17 +102,15 @@
 
             // --- 4. ACTIONS IMPLEMENTATION ---
             const actions = {
-                // Node Management (Fixed Hierarchical IDs)
+                // Node Management
                 addNode(parentId) {
                     const mode = state.mode;
                     const prefix = mode === 'low-z' ? 'L' : 'H';
                     let newId = '';
 
-                    // Helper to extract number from ID string (e.g. "L-1.2" -> 2)
                     const getLastNum = (idStr) => parseInt(idStr.split('.').pop().split('-').pop()) || 0;
 
                     if (!parentId) {
-                        // Root Node: Find max L-X
                         const roots = mode === 'low-z' ? state.lowZRoots : state.highVRoots;
                         let max = 0;
                         roots.forEach(n => {
@@ -123,7 +119,6 @@
                         });
                         newId = `${prefix}-${max + 1}`;
                     } else {
-                        // Child Node: Find parent and max child index
                         const findParent = (nodes) => {
                             for (let n of nodes) {
                                 if (n.id === parentId) return n;
@@ -146,7 +141,6 @@
                             }
                             newId = `${parentNode.id}.${max + 1}`;
                         } else {
-                            // Fallback if parent lost
                             newId = `${prefix}-${Math.floor(Math.random()*10000)}`; 
                         }
                     }
@@ -160,7 +154,7 @@
                         cableId: 'Default Cable 1.5mm²', length: 20,
                         useCable2: false, cable2Id: '', length2: 0,
                         children: [],
-                        results: { status: 'Pending' } // Initial state
+                        results: { status: 'Pending' }
                     };
 
                     if (parentId) {
@@ -199,25 +193,19 @@
                     actions.calculateAll();
                 },
 
-                // Project Management
                 loadProject(file) { 
                     const r=new FileReader(); 
                     r.onload=(e)=>{ 
                         try{ 
                             const d=JSON.parse(e.target.result); 
-                            
-                            // Map legacy keys if needed
                             if (d.lowZ) { state.lowZRoots = d.lowZ; delete d.lowZ; }
                             if (d.highV) { state.highVRoots = d.highV; delete d.highV; }
-                            
                             Object.assign(state, d); 
-                            
                             if(d.database && confirm("Merge embedded database?")) {
                                 Object.assign(state.database.speakers, d.database.speakers || {});
                                 Object.assign(state.database.cables, d.database.cables || {});
                                 Object.assign(state.database.amplifiers, d.database.amplifiers || {});
                             }
-                            
                             alert("Project Loaded Successfully"); 
                             actions.calculateAll(); 
                         } catch(err){ alert("Load Failed: " + err.message); } 
@@ -228,15 +216,38 @@
                 saveProject() { showSaveModal.value = true; },
                 handleSaveSelect(includeDb) { window.App.Utils.IO.exportProjectJSON(state, includeDb); showSaveModal.value = false; },
 
-                // Equipment Tools
+                // --- FIXED EQUIPMENT VALIDATION ---
                 validateEquipment(type, id) {
                     if (!id || id.startsWith('Default')) return;
-                    if (!state.database[type][id]) {
+                    
+                    const item = state.database[type][id];
+                    let isMissing = false;
+
+                    // Check 1: Does item exist?
+                    if (!item) {
+                        isMissing = true;
+                    } else {
+                        // Check 2: Are critical fields empty/zero?
+                        if (type === 'cables') {
+                            // Cables need resistance
+                            if (item.resistance === undefined || item.resistance === null || item.resistance === '') isMissing = true;
+                        } 
+                        else if (type === 'speakers') {
+                            // Speakers need either Impedance OR Power
+                            const hasImp = item.impedance && item.impedance > 0;
+                            const hasPower = item.wattage_rms && item.wattage_rms > 0;
+                            if (!hasImp && !hasPower) isMissing = true;
+                        }
+                    }
+
+                    if (isMissing) {
                         missingDataState.title = id;
                         missingDataState.fields = type === 'speakers' ? 
                             [{key:'impedance',label:'Impedance'},{key:'wattage_rms',label:'Power (RMS)'},{key:'z_min',label:'Min Z'}] : 
                             [{key:'resistance',label:'Resistance (Ohms/km)'},{key:'capacitance',label:'Capacitance (pF/m)'}];
-                        missingDataState.initialData = { id: id, brand: 'Unknown', model: 'Imported', type: type };
+                        
+                        // Use existing data if available, otherwise template
+                        missingDataState.initialData = item ? { ...item } : { id: id, brand: 'Unknown', model: 'Imported', type: type };
                         missingDataState.visible = true;
                     }
                 },
@@ -249,7 +260,6 @@
                     actions.calculateAll();
                 },
 
-                // Amp Logic
                 openAmpModal(n) { pendingAmpNode.value=n; showAmpModal.value=true; },
                 handleAmpSelection(id) { 
                     const n=pendingAmpNode.value; 
@@ -263,7 +273,6 @@
                     } 
                 },
 
-                // Wizard Logic
                 runCableWizard(node, brandFilter) {
                     const profile = window.App.Core.Database.PROFILES[state.qualityMode];
                     const limit = profile.maxDrop;
@@ -308,7 +317,6 @@
 
                 setMode(m) { state.mode=m; actions.calculateAll(); },
 
-                // --- CALCULATION ENGINE ---
                 calculateAll() {
                     const db = state.database;
                     const profile = window.App.Core.Database.PROFILES[state.qualityMode];
@@ -330,7 +338,6 @@
                             
                             let sV=parentVolts, rV=rootVolts, rAmp=rootAmpInstance;
                             
-                            // Root Node Setup
                             if (!node.parentId) {
                                 if (node.ampInstanceId && state.ampRack[node.ampInstanceId]) { 
                                     rAmp = state.ampRack[node.ampInstanceId]; 
@@ -348,7 +355,6 @@
                             
                             const safeV=sV||100, safeRV=rV||safeV;
                             
-                            // Impedance Calc
                             let zCab = physics.getCableImpedance(cable, node.length, 1000, state.settings.temp_c);
                             if(node.useCable2 && node.cable2Id) { 
                                 const c2=db.cables[node.cable2Id]; 
@@ -367,19 +373,16 @@
                                 zNomMag = zMinMag; 
                             }
                             
-                            // Physics
                             const tx = physics.calculateTransmission(safeV, zMinMag, zCab);
                             const drop = safeRV > 0 ? ((safeRV-tx.voltageAtLoad)/safeRV)*100 : 0;
                             const hfCheck = physics.calculateHFLoss(safeV, zMinMag, cable, node.length, state.settings.temp_c, limits.hf_freq);
                             const elecLoss = physics.calculateElectricalSPLLoss(tx.voltageAtLoad, safeRV);
                             
-                            // Status Logic
                             let status='OK', statusMsg='';
                             if(drop > limits.maxDrop){ status='Warning'; statusMsg='High Drop'; }
                             if(drop > limits.maxDrop*1.5){ status='Error'; statusMsg='Critical Drop'; }
                             if(hfCheck.isAudible && status!=='Error'){ status='Warning'; statusMsg='HF Loss'; }
                             
-                            // Headroom
                             let headroomPct = 0;
                             if(rAmp && !node.parentId) { 
                                 const m = db.amplifiers[rAmp.modelId]; 
@@ -642,7 +645,6 @@
         }
     });
 
-    // Register All Components
     app.component('app-header', window.App.UI.AppHeader);
     app.component('tree-node', window.App.UI.TreeNode);
     app.component('amp-select-modal', window.App.UI.AmpSelectModal);
