@@ -1,7 +1,7 @@
 /**
  * Speaker Design Tool v3.0 - Main Entry
  * Status: Production Ready
- * Fixes: Missing Data Modal logic, Sequential Hierarchical IDs
+ * Fixes: Added Channel Count to Amplifier Validation
  */
 
 (function () {
@@ -42,7 +42,7 @@
             const pendingAmpNode = ref(null); 
             const showSaveModal = ref(false); 
             const wizardState = reactive({ visible: false, candidates: [], limit: 5 }); 
-            const missingDataState = reactive({ visible: false, title: '', fields: [], initialData: {} });
+            const missingDataState = reactive({ visible: false, title: '', instruction: '', fields: [], initialData: {} });
             
             window.App.State = state; 
             window.App.Actions = {};
@@ -107,14 +107,22 @@
                     const mode = state.mode;
                     const prefix = mode === 'low-z' ? 'L' : 'H';
                     let newId = '';
+                    
+                    const getLastNum = (idStr) => {
+                        if(!idStr) return 0;
+                        const parts = idStr.split('.');
+                        const lastSeg = parts[parts.length-1]; 
+                        const cleanNum = lastSeg.replace(/^[LH]-/, '');
+                        return parseInt(cleanNum) || 0;
+                    };
 
-                    const getLastNum = (idStr) => parseInt(idStr.split('.').pop().split('-').pop()) || 0;
+                    let parentNode = null;
+                    const roots = mode === 'low-z' ? state.lowZRoots : state.highVRoots;
 
                     if (!parentId) {
-                        const roots = mode === 'low-z' ? state.lowZRoots : state.highVRoots;
                         let max = 0;
                         roots.forEach(n => {
-                            const num = parseInt(n.id.replace(prefix + '-', '')) || 0;
+                            const num = getLastNum(n.id);
                             if (num > max) max = num;
                         });
                         newId = `${prefix}-${max + 1}`;
@@ -129,8 +137,8 @@
                             }
                             return null;
                         };
+                        parentNode = findParent(roots);
                         
-                        const parentNode = findParent(mode === 'low-z' ? state.lowZRoots : state.highVRoots);
                         if (parentNode) {
                             let max = 0;
                             if (parentNode.children) {
@@ -154,26 +162,24 @@
                         cableId: 'Default Cable 1.5mm²', length: 20,
                         useCable2: false, cable2Id: '', length2: 0,
                         children: [],
-                        results: { status: 'Pending' }
+                        results: { status: 'Pending', dropPercent: 0, minLoad: 0 }
                     };
 
-                    if (parentId) {
-                        const findAndAdd = (nodes) => {
-                            for (let n of nodes) {
-                                if (n.id === parentId) {
-                                    if (!n.children) n.children = [];
-                                    n.children.push(newNode);
-                                    return true;
-                                }
-                                if (n.children && findAndAdd(n.children)) return true;
-                            }
-                            return false;
-                        };
-                        findAndAdd(mode === 'low-z' ? state.lowZRoots : state.highVRoots);
-                    } else {
-                        if (mode === 'low-z') state.lowZRoots.push(newNode);
-                        else state.highVRoots.push(newNode);
+                    if (parentNode) {
+                        newNode.speakerId = parentNode.speakerId;
+                        newNode.cableId = parentNode.cableId;
+                        newNode.length = 5; 
+                        newNode.tapPower = parentNode.tapPower;
+                        newNode.parallelCount = 1;
                     }
+
+                    if (parentNode) {
+                        if (!parentNode.children) parentNode.children = [];
+                        parentNode.children.push(newNode);
+                    } else {
+                        roots.push(newNode);
+                    }
+                    
                     actions.calculateAll();
                 },
 
@@ -216,44 +222,74 @@
                 saveProject() { showSaveModal.value = true; },
                 handleSaveSelect(includeDb) { window.App.Utils.IO.exportProjectJSON(state, includeDb); showSaveModal.value = false; },
 
-                // --- FIXED EQUIPMENT VALIDATION ---
+                // --- EQUIPMENT VALIDATION ---
                 validateEquipment(type, id) {
                     if (!id || id.startsWith('Default')) return;
                     
                     const item = state.database[type][id];
-                    let isMissing = false;
+                    const missingFields = [];
+                    
+                    // Defined checks per type
+                    const checks = {
+                        speakers: [
+                            { key: 'impedance', label: 'Impedance (Ω)' },
+                            { key: 'wattage_rms', label: 'Power RMS (W)' },
+                            { key: 'z_min', label: 'Min Impedance (Ω)' }
+                        ],
+                        cables: [
+                            { key: 'resistance', label: 'Resistance (Ω/km)' },
+                            { key: 'capacitance', label: 'Capacitance (pF/m)' },
+                            { key: 'inductance', label: 'Inductance (µH/m)' }
+                        ],
+                        amplifiers: [
+                            { key: 'watt_8', label: 'Power 8Ω (W)' },
+                            { key: 'watt_4', label: 'Power 4Ω (W)' },
+                            { key: 'watt_100v', label: 'Power 100V (W)' },
+                            { key: 'df', label: 'Damping Factor' },
+                            { key: 'channels_lowz', label: 'Channels (Low-Z)' } // Added Check
+                        ]
+                    };
 
-                    // Check 1: Does item exist?
+                    const targetChecks = checks[type] || [];
+
                     if (!item) {
-                        isMissing = true;
+                        missingFields.push(...targetChecks);
                     } else {
-                        // Check 2: Are critical fields empty/zero?
-                        if (type === 'cables') {
-                            // Cables need resistance
-                            if (item.resistance === undefined || item.resistance === null || item.resistance === '') isMissing = true;
-                        } 
-                        else if (type === 'speakers') {
-                            // Speakers need either Impedance OR Power
-                            const hasImp = item.impedance && item.impedance > 0;
-                            const hasPower = item.wattage_rms && item.wattage_rms > 0;
-                            if (!hasImp && !hasPower) isMissing = true;
-                        }
+                        targetChecks.forEach(field => {
+                            const val = item[field.key];
+                            // Check for undefined, null, or empty strings. 
+                            // We allow 0, but key fields like resistance shouldn't be 0 ideally.
+                            // For safety, we flag it if it's strictly undefined/null or empty string.
+                            if (val === undefined || val === null || val === '') {
+                                missingFields.push(field);
+                            }
+                        });
                     }
 
-                    if (isMissing) {
+                    if (missingFields.length > 0) {
                         missingDataState.title = id;
-                        missingDataState.fields = type === 'speakers' ? 
-                            [{key:'impedance',label:'Impedance'},{key:'wattage_rms',label:'Power (RMS)'},{key:'z_min',label:'Min Z'}] : 
-                            [{key:'resistance',label:'Resistance (Ohms/km)'},{key:'capacitance',label:'Capacitance (pF/m)'}];
+                        missingDataState.instruction = "Some technical specifications are missing. Please enter '0' if a field is not applicable to this product.";
+                        missingDataState.fields = missingFields;
                         
-                        // Use existing data if available, otherwise template
                         missingDataState.initialData = item ? { ...item } : { id: id, brand: 'Unknown', model: 'Imported', type: type };
+                        
+                        // Ensure fields exist for reactivity
+                        missingFields.forEach(f => {
+                            if (missingDataState.initialData[f.key] === undefined) {
+                                missingDataState.initialData[f.key] = null; 
+                            }
+                        });
+
                         missingDataState.visible = true;
                     }
                 },
                 
                 saveMissingData(formData) {
-                    const type = formData.type === 'speakers' ? 'speakers' : 'cables';
+                    let type = 'speakers';
+                    if (formData.type) type = formData.type;
+                    else if (formData.resistance !== undefined) type = 'cables';
+                    else if (formData.watt_8 !== undefined) type = 'amplifiers';
+                    
                     if (!state.database[type]) state.database[type] = {};
                     state.database[type][formData.id] = formData;
                     missingDataState.visible = false;
@@ -268,7 +304,11 @@
                         state.ampRack[cid]={id:cid,modelId:id,channelsUsed:[]}; 
                         n.ampInstanceId=cid; 
                         n.ampChannel=null; 
-                        showAmpModal.value=false; 
+                        showAmpModal.value=false;
+                        
+                        // Trigger validation
+                        actions.validateEquipment('amplifiers', id);
+                        
                         actions.calculateAll();
                     } 
                 },
@@ -448,7 +488,6 @@
             const loadImage = (src) => {
                 return new Promise((resolve) => {
                     if (!src) { resolve(null); return; }
-                    
                     const img = new Image();
                     img.crossOrigin = "Anonymous";
                     img.onload = () => {
@@ -457,12 +496,7 @@
                         canvas.height = img.height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0);
-                        try {
-                            const data = canvas.toDataURL('image/png');
-                            resolve({ data, width: img.width, height: img.height });
-                        } catch(e) { 
-                            resolve({ data: src, width: img.width, height: img.height });
-                        }
+                        try { resolve({ data: canvas.toDataURL('image/png'), width: img.width, height: img.height }); } catch(e) { resolve({ data: src, width: img.width, height: img.height }); }
                     };
                     img.onerror = () => resolve(null);
                     img.src = src;
@@ -473,10 +507,7 @@
                 try {
                     const { jsPDF } = window.jspdf; 
                     const doc = new jsPDF('l', 'mm', 'a4');
-                    
-                    doc.setFillColor(39, 39, 42); 
-                    doc.rect(0,0,297,35,'F');
-                    
+                    doc.setFillColor(39, 39, 42); doc.rect(0,0,297,35,'F');
                     doc.setFontSize(22); doc.setTextColor(255); doc.text("System Design Report", 15, 18);
                     doc.setFontSize(10); doc.setTextColor(200); 
                     doc.text(`Project: ${state.projectInfo.name}`, 15, 26);
@@ -489,12 +520,10 @@
                         if (logoInfo && logoInfo.data) {
                              let format = 'PNG';
                              if(logoInfo.data.startsWith('data:image/jpeg')) format = 'JPEG';
-                             
                              const maxW = 40, maxH = 25;
                              const aspect = logoInfo.width / logoInfo.height;
                              let w = maxW, h = w / aspect;
                              if (h > maxH) { h = maxH; w = h * aspect; }
-                             
                              const x = 235 + (maxW - w) / 2;
                              const y = 8 + (maxH - h) / 2;
                              doc.addImage(logoInfo.data, format, x, y, w, h);
@@ -645,6 +674,7 @@
         }
     });
 
+    // Register All Components
     app.component('app-header', window.App.UI.AppHeader);
     app.component('tree-node', window.App.UI.TreeNode);
     app.component('amp-select-modal', window.App.UI.AmpSelectModal);
