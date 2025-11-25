@@ -356,7 +356,7 @@
             <div class="flex flex-col gap-6 h-full overflow-y-auto animate-in p-6 max-w-6xl mx-auto">
                 <div class="bg-zinc-800 border border-zinc-700 rounded-lg p-10 shadow-xl">
                     <header class="mb-10 border-b border-zinc-700 pb-6">
-                        <h1 class="text-4xl font-bold text-white mb-2 tracking-tight">Scientific Reference</h1>
+                        <h1 class="text-4xl font-bold text-white mb-2 tracking-tight">Technical Reference</h1>
                         <p class="text-zinc-400 text-lg">A deep dive into the physics engine and mathematical models used in this application.</p>
                     </header>
 
@@ -459,4 +459,5 @@
     };
 
     console.log("App.UI Views Loaded (v3.0)");
+
 })();
