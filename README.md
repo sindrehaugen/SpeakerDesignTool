@@ -1,3 +1,7 @@
+
+_New version with some bugfixes and minor addition to Equipment handling will be released. _
+
+
 # Speaker Design Tool v3.0
 
    
