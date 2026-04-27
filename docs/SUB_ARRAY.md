@@ -221,11 +221,12 @@ Run `npm run test -- subArray` to execute just this suite.
 - **No ground plane.** The 2D coverage map does not include the floor bounce — add it from `mvv.ts::floorBounce` if you want to see the full comb response at ear height.
 - **Heatmap resolution** is 520 × 520 px × N units, recomputed on every parameter change. Runs at > 60 fps for N ≤ 8; start-up cost is a few ms.
 - **No SPL units.** Magnitudes are dB relative to the coherent-sum peak, not absolute SPL. Feed cabinet sensitivity + drive level into `coherentReference` externally if you need dB SPL.
+- **No persistence.** The sub-array designer state (preset, unit positions, delays, gains) lives in local Vue `ref`s inside `CalculatorsView.vue`. It is **not** connected to any Pinia store or the `storage.ts` persistence layer, so custom configurations do not survive an app restart or a tab switch that unmounts the view.
 
 Reasonable next features:
 - Overlay the polar response from multiple frequencies (e.g. 40/60/80/100 Hz stacked).
-- Save/load custom array layouts to `localStorage` or the project JSON.
-- Tie the designer to the Room view so an array can be dropped into an installation as a single aggregated source.
+- Save/load custom array layouts to the project JSON (currently, sub-array state is ephemeral `ref` state in `CalculatorsView.vue` — it is not wired into any Pinia store or the `storage.ts` persistence layer, so custom layouts are lost on app restart).
+- Tie the designer to the Room view so an array can be dropped into an installation as a single aggregated source (requires bridging the currently isolated sub-array state into the `room` store).
 
 ## Credits
 

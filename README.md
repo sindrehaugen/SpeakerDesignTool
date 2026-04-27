@@ -1,6 +1,6 @@
-# Speaker Design Tool v4
+# Speaker Design Tool v3
 
-A browser-based simulation suite for designing Low-Z (4/8 Ω) and distributed (100 V / 70 V) loudspeaker installations. v4 is a full rewrite on a modern Vite + Vue 3 + TypeScript stack, with a spectral physics engine, a 3D room view, an SPL coverage heatmap, a set of acoustics calculators, and a subwoofer-array beamforming designer.
+A native desktop application for designing Low-Z (4/8 Ω) and distributed (100 V / 70 V) loudspeaker installations. Built with Tauri (Rust + WebView2) wrapping a Vite + Vue 3 + TypeScript frontend, with a spectral physics engine, a 3D room view, an SPL coverage heatmap, a set of acoustics calculators, and a subwoofer-array beamforming designer. The app also runs as a browser dev server via `npm run dev` for development and testing.
 
 ---
 
@@ -22,15 +22,24 @@ Everything is pure functions — the UI reads a single reactive `analysis = comp
 
 ## Running it
 
+**Recommended (desktop):**
+
 ```bash
 npm install
-npm run dev        # http://localhost:5173
-npm run test       # Vitest — 46 unit tests across 7 files
-npm run typecheck  # vue-tsc strict
-npm run build      # production bundle in dist/
+npm run tauri:dev   # hot-reload native window (Vite + Rust shell)
+npm run tauri:build # production .exe + installers
 ```
 
-Node 18+ is required.
+**Browser fallback (development only):**
+
+```bash
+npm run dev        # http://localhost:5173 — uses localStorage
+npm run test       # Vitest — 46 unit tests across 7 files
+npm run typecheck  # vue-tsc strict
+npm run build      # Vite production bundle in dist/
+```
+
+Node 18+ is required. See [Desktop packaging (Tauri)](#desktop-packaging-tauri) for Rust prerequisites.
 
 ---
 
@@ -42,7 +51,7 @@ Hierarchical signal-chain builder with live per-node voltage drop, load Ω, HF l
 
 ### Database tab
 
-Edit / import / export Speakers, Cables, Amplifiers (CSV + JSON). Defaults load from `src/data/` on first run; edits persist to `localStorage`.
+Edit / import / export Speakers, Cables, Amplifiers (CSV + JSON). Defaults load from `src/data/` on first run; edits persist to native JSON files in `%APPDATA%\com.speakerdesigntool.app\` (desktop) or `localStorage` (browser dev mode).
 
 ### Room & Coverage tab
 
@@ -93,17 +102,31 @@ single storage abstraction (`src/services/storage.ts`). The same three keys
 are used in both backends, so data round-trips cleanly between `npm run dev`
 and the packaged desktop app:
 
-| Key | Contents |
-|---|---|
-| `sdt_database_v4` | user-edited speakers / cables / amps |
-| `sdt_user_prefs_v4` | project title, acceptance thresholds, environment |
-| `sdt_room_v4` | geometry, speakers, obstacles, slopes, listeners |
+| Key | Disk filename | Contents |
+|---|---|---|
+| `sdt_database_v4` | `sdt_database_v4.json` | user-edited speakers / cables / amps |
+| `sdt_user_prefs_v4` | `sdt_user_prefs_v4.json` | project title, acceptance thresholds, environment |
+| `sdt_room_v4` | `sdt_room_v4.json` | geometry, speakers, obstacles, slopes, listeners |
 
-- **Browser (`npm run dev`, `npm run preview`):** `localStorage`, same as before.
-- **Desktop (`npm run tauri:dev`, packaged `.exe`):** JSON files in
-  `%APPDATA%\com.speakerdesigntool.app\` (one file per key). Writes are
-  debounced (250 ms) and flushed on window close. On first launch inside
-  Tauri, any existing `localStorage` data is automatically migrated to disk.
+- **Desktop (primary — `npm run tauri:dev`, packaged `.exe`):** JSON files in
+  `%APPDATA%\com.speakerdesigntool.app\` (one file per key, named `${key}.json`).
+  Writes are debounced (250 ms) and flushed on window close. On first launch
+  inside Tauri, any existing `localStorage` data is automatically migrated to
+  disk. These files are plain JSON — you can back them up, inspect them, or
+  copy them between machines.
+- **Browser fallback (`npm run dev`, `npm run preview`):** `localStorage`.
+  Useful during development but not recommended for production use.
+
+**Hydration lifecycle:** On desktop startup, `storage.hydrate()` is `await`-ed
+in `main.ts` *before* the Vue app mounts. This primes an in-memory cache from
+disk so that Pinia stores can read synchronously during `setup()`. Writes flow
+back through a debounced `scheduleWrite()` and are force-flushed via
+`flush()` on `beforeunload`.
+
+**Filesystem sandbox:** The Tauri shell restricts file access to `$APPDATA`
+via `src-tauri/capabilities/default.json`. The app cannot read or write
+arbitrary user folders. Project import/export uses the standard
+Tauri file-picker dialog within this scope.
 
 ---
 
@@ -112,17 +135,24 @@ and the packaged desktop app:
 The Vue/Vite frontend is wrapped by a Rust + WebView2 shell under
 `src-tauri/` to produce a standalone Windows `.exe` + installers.
 
-### One-time prerequisite
+### One-time prerequisites
 
-Install the Rust toolchain (the `.exe` built from it has no Rust runtime
-dependency — only the build host needs Rust):
+The build host needs the Rust toolchain and the Microsoft C++ Build Tools
+(the shipped `.exe` has no Rust runtime dependency):
 
 ```powershell
+# 1. Rust compiler
 winget install Rustlang.Rustup
 rustup default stable
+
+# 2. C++ linker (required by Rust on Windows)
+#    Install "Desktop development with C++" workload via
+#    Visual Studio Build Tools or full Visual Studio.
+winget install Microsoft.VisualStudio.2022.BuildTools
 ```
 
-Windows 10/11 already ships Edge WebView2, so no other runtimes are needed.
+Windows 10/11 already ships Edge WebView2, so no other end-user runtimes
+are needed.
 
 ### Scripts
 
@@ -203,7 +233,7 @@ src-tauri/          Rust + WebView2 desktop shell (tauri build → .exe)
   icons/              generated from app-icon.png via `tauri icon`
 ```
 
-The v3 single-file HTML implementation has been moved to `legacy/` for reference.
+The v2 single-file HTML implementation has been moved to `legacy/` for reference.
 
 ---
 
