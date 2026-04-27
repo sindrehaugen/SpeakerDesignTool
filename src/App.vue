@@ -50,10 +50,14 @@ const view = computed(() => {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  background: var(--bg);
 }
 .app-main {
   flex: 1;
   overflow: auto;
-  padding: 16px;
+  padding: 0;
+  background:
+    radial-gradient(ellipse 1200px 600px at 50% -200px, rgba(34,211,238,0.025) 0%, transparent 60%),
+    var(--bg);
 }
 </style>

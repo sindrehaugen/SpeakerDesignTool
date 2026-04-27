@@ -96,9 +96,100 @@ function close(): void {
 </template>
 
 <style scoped>
-.modal.wide { min-width: 700px; }
-.filters { display: flex; gap: 16px; margin: 12px 0; }
-.filters label { display: flex; flex-direction: column; gap: 4px; }
-.pass td { color: var(--accent); }
-footer { display: flex; justify-content: flex-end; margin-top: 16px; }
+.modal.wide { min-width: 760px; }
+
+:deep(h2) {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--fg);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+:deep(h2)::before {
+  content: "🪄 ";
+  color: var(--accent);
+  filter: hue-rotate(180deg) saturate(2);
+}
+
+.muted {
+  color: var(--fg-subtle);
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 0 0 10px 0;
+  font-family: var(--font-mono);
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 8px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  align-items: end;
+}
+.filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-dim);
+}
+
+/* Candidate ledger */
+:deep(.table) {
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  font-size: 11px;
+}
+:deep(.table th) {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--accent);
+  background: var(--bg-1);
+  height: 24px;
+  border-bottom: 1px solid var(--border);
+}
+:deep(.table td) {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  padding: 3px 8px;
+  height: 24px;
+  border-bottom: 1px solid var(--border-soft);
+}
+:deep(.table tbody tr:hover) { background: var(--bg-2); }
+:deep(.table tr.pass td) {
+  color: var(--ok);
+  background: rgba(52,211,153,0.04);
+}
+:deep(.table tr.pass td:first-child) {
+  border-left: 2px solid var(--ok);
+}
+:deep(.table button) {
+  height: 20px;
+  padding: 0 8px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-soft);
+}
 </style>

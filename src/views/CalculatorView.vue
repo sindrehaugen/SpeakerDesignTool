@@ -100,19 +100,115 @@ const summary = computed(() => {
 .calculator {
   display: grid;
   grid-template-columns: 240px 1fr 400px;
-  gap: 12px;
-  height: calc(100vh - 80px);
+  gap: 8px;
+  padding: 8px;
+  height: calc(100vh - 38px);
+  background: var(--bg);
 }
-.controls { display: flex; flex-direction: column; gap: 10px; }
-.controls label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
-.summary { display: flex; gap: 6px; margin: 8px 0; flex-wrap: wrap; }
-.tree { display: flex; flex-direction: column; overflow: hidden; }
+
+/* Left rail — system controls */
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.controls :deep(h3) {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 2px;
+}
+.controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-dim);
+}
+.controls label input,
+.controls label select { font-size: 12px; }
+.controls > button { margin-top: 2px; }
+
+.summary {
+  display: flex;
+  gap: 4px;
+  margin: 6px 0 2px;
+  padding: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
+}
+
+/* Center — signal chain */
+.tree {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
 .panel-head {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 12px 16px; border-bottom: 1px solid var(--border-soft);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  height: 32px;
+  background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%);
+  border-bottom: 1px solid var(--border);
 }
-.tree-scroll { flex: 1; overflow: auto; padding: 12px; }
-.empty { text-align: center; padding: 40px; }
-.root-wrap { margin-bottom: 8px; }
-.charts { display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+.panel-head :deep(h2) {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg);
+}
+.tree-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 8px;
+  background:
+    linear-gradient(var(--bg-1), var(--bg-1)),
+    repeating-linear-gradient(0deg, transparent 0 23px, var(--border-soft) 23px 24px);
+  background-blend-mode: normal;
+}
+.empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--fg-subtle);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.root-wrap {
+  margin-bottom: 4px;
+  border-left: 2px solid transparent;
+  padding-left: 4px;
+  transition: border-color 80ms linear;
+}
+.root-wrap:hover { border-left-color: var(--accent-line); }
+
+/* Right rail — analysis charts */
+.charts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+}
+.charts .card {
+  padding: 10px;
+}
+.charts :deep(h3) {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--fg-dim);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border-soft);
+}
 </style>

@@ -120,26 +120,127 @@ const tapOptions = computed(() => {
 
 <style scoped>
 .tree-node { margin-bottom: 2px; }
+
+/* Channel-strip row — each signal node */
 .row {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
-  padding: 6px 8px;
+  padding: 3px 6px 3px 4px;
   background: var(--bg-1);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--border);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   flex-wrap: wrap;
+  min-height: 26px;
+  transition: border-left-color 80ms linear, background 80ms linear;
 }
-.id { color: var(--fg-subtle); min-width: 54px; }
-.label-input { width: 120px; }
-.amp-btn { background: var(--bg-2); }
-.inline { display: inline-flex; align-items: center; gap: 4px; color: var(--fg-dim); font-size: 12px; }
-.num-sm { width: 64px; }
+.row:hover {
+  background: var(--bg-2);
+  border-left-color: var(--accent);
+}
+
+/* Node ID — patchbay tag */
+.id {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  min-width: 54px;
+  padding: 1px 5px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  border-radius: 2px;
+  text-align: center;
+}
+
+.label-input {
+  width: 100px;
+  height: 22px;
+  padding: 0 6px;
+  font-size: 11px;
+  background: var(--bg);
+}
+.label-input::placeholder {
+  color: var(--fg-subtle);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.row select,
+.row input {
+  height: 22px;
+  font-size: 11px;
+  padding: 0 6px;
+  background: var(--bg);
+}
+
+/* Amplifier assignment button */
+.amp-btn {
+  height: 22px;
+  padding: 0 8px;
+  background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+.amp-btn:hover { border-color: var(--accent-line); color: var(--accent); }
+
+/* Inline numeric units (×, L=, m) */
+.inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--fg-subtle);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.num-sm {
+  width: 52px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Metrics readout — pushed right, monospace, color-coded */
 .metrics {
   display: flex;
-  gap: 10px;
+  gap: 0;
   color: var(--fg-dim);
   margin-left: auto;
+  padding: 0;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  font-size: 10px;
 }
-.status-message { margin: 2px 0 6px 12px; font-size: 11px; }
+.metrics span {
+  padding: 3px 8px;
+  border-right: 1px solid var(--border-soft);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+.metrics span:last-child { border-right: 0; }
+.metrics span:first-child { color: var(--accent); }
+
+/* Status message — fault hint under the row */
+.status-message {
+  margin: 2px 0 4px 60px;
+  font-size: 10px;
+  color: var(--warn);
+  padding: 2px 6px;
+  border-left: 2px solid var(--warn);
+  background: var(--warn-soft);
+  border-radius: 0 2px 2px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 </style>

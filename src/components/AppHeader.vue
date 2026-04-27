@@ -63,27 +63,31 @@ function quickSave(): void {
 <template>
   <header class="app-header">
     <div class="brand">
-      <strong>Speaker Design Tool</strong>
-      <span class="muted mono">v3</span>
+      <span class="logo-dot" aria-hidden="true"></span>
+      <strong class="brand-name">SPEAKER<span class="brand-sep">·</span>DESIGN</strong>
+      <span class="brand-ver mono">v3.0</span>
     </div>
 
-    <nav class="tabs">
+    <nav class="tabs" role="tablist">
       <button
         v-for="t in tabs"
         :key="t.id"
+        role="tab"
+        :aria-selected="ui.currentView === t.id"
         :class="['tab', { active: ui.currentView === t.id }]"
         @click="ui.currentView = t.id"
       >{{ t.label }}</button>
     </nav>
 
     <div class="actions">
-      <label class="file-btn">
+      <label class="file-btn" title="Load project">
         <input type="file" accept=".json,.sdt.json" hidden @change="loadProject" />
         Load
       </label>
-      <button @click="quickSave">Save</button>
-      <button @click="ui.showSaveModal = true">Save As…</button>
-      <button class="primary" @click="runReport">PDF Report</button>
+      <button @click="quickSave" title="Quick save">Save</button>
+      <button @click="ui.showSaveModal = true" title="Save as…">Save As…</button>
+      <span class="sep" aria-hidden="true"></span>
+      <button class="primary" @click="runReport" title="Generate PDF report">PDF Report</button>
     </div>
   </header>
 </template>
@@ -92,31 +96,96 @@ function quickSave(): void {
 .app-header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 10px 16px;
-  background: var(--bg-1);
+  gap: 14px;
+  height: 38px;
+  padding: 0 10px;
+  background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%);
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.4);
+  user-select: none;
+  -webkit-user-select: none;
 }
-.brand { display: flex; align-items: baseline; gap: 8px; }
-.tabs { display: flex; gap: 2px; flex: 1; }
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 10px;
+  border-right: 1px solid var(--border-soft);
+  height: 100%;
+}
+.logo-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-line), 0 0 12px var(--accent-soft);
+}
+.brand-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--fg);
+}
+.brand-sep { color: var(--accent); margin: 0 1px; }
+.brand-ver {
+  font-size: 10px;
+  color: var(--fg-subtle);
+  letter-spacing: 0.04em;
+}
+
+.tabs {
+  display: flex;
+  gap: 0;
+  flex: 1;
+  height: 100%;
+  align-items: stretch;
+  overflow: hidden;
+}
 .tab {
   background: transparent;
-  border: 1px solid transparent;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
   color: var(--fg-dim);
-  padding: 6px 14px;
+  padding: 0 12px;
+  height: 100%;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: none;
+  transition: color 80ms linear, border-color 80ms linear, background 80ms linear;
 }
-.tab:hover { color: var(--fg); background: var(--bg-2); }
-.tab.active { color: var(--fg); background: var(--bg-2); border-color: var(--border); }
-.actions { display: flex; gap: 6px; align-items: center; }
+.tab:hover { color: var(--fg); background: rgba(255,255,255,0.02); }
+.tab.active {
+  color: var(--accent);
+  background: linear-gradient(180deg, rgba(34,211,238,0.04) 0%, transparent 100%);
+  border-bottom-color: var(--accent);
+}
+
+.actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding-left: 8px;
+  border-left: 1px solid var(--border-soft);
+  height: 100%;
+}
+.actions button { height: 24px; }
+.sep { width: 1px; height: 18px; background: var(--border-soft); margin: 0 4px; }
 .file-btn {
   display: inline-flex;
   align-items: center;
-  padding: 6px 12px;
+  height: 24px;
+  padding: 0 10px;
   border: 1px solid var(--border);
-  background: var(--bg-1);
+  background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%);
+  color: var(--fg);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 12px;
+  box-shadow: var(--shadow-1);
+  transition: background 80ms linear, border-color 80ms linear;
 }
-.file-btn:hover { background: var(--bg-2); }
+.file-btn:hover { background: var(--bg-3); border-color: var(--border-strong); }
 </style>

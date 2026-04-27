@@ -83,8 +83,88 @@ function close(): void {
 </template>
 
 <style scoped>
-.group { display: flex; flex-direction: column; gap: 4px; margin: 12px 0; }
-.row { display: flex; gap: 16px; margin: 12px 0; }
-.check { display: inline-flex; align-items: center; gap: 6px; color: var(--fg-dim); }
-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+:deep(h2) {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--fg);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+:deep(h2)::before {
+  content: "▸ ";
+  color: var(--accent);
+}
+
+.muted {
+  color: var(--fg-subtle);
+  font-size: 11px;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+  padding: 8px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+}
+.group label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+.group select {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  margin: 8px 0;
+  padding: 8px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  align-items: center;
+}
+.row label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-dim);
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.check input { width: auto; height: auto; }
+
+footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-soft);
+}
 </style>

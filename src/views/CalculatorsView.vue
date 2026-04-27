@@ -210,21 +210,168 @@ function fmt(n: number, digits = 2): string {
 </template>
 
 <style scoped>
-.calcs { display: flex; flex-direction: column; gap: 14px; max-width: 960px; margin: 0 auto; }
-.card { padding: 14px 16px; }
-.credit { border-left: 3px solid var(--accent); }
-.credit a { color: var(--accent); }
-h3 { margin: 0 0 10px 0; color: var(--accent); }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; margin-bottom: 8px; }
-.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end; margin-bottom: 8px; }
-.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: end; margin-bottom: 10px; }
-label { display: flex; flex-direction: column; font-size: 12px; color: var(--fg-dim); gap: 4px; }
-input { padding: 5px 8px; }
-.readout { padding: 8px 10px; background: var(--bg-2); border-radius: var(--radius-sm); font-size: 13px; }
-.readout strong { color: var(--fg); }
-.muted { color: var(--fg-dim); font-size: 12px; margin: 4px 0 0 0; }
-table.absorb { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 13px; }
-table.absorb th, table.absorb td { text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--border); }
-table.absorb th:first-child, table.absorb td:first-child { text-align: left; }
-.fb-plot { width: 100%; height: 160px; background: var(--bg-2); border-radius: var(--radius-sm); }
+.calcs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 8px;
+}
+
+.card {
+  padding: 10px 12px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+}
+
+.credit {
+  border-left: 2px solid var(--accent);
+  background:
+    linear-gradient(90deg, var(--accent-soft) 0%, transparent 30%),
+    var(--bg-1);
+}
+.credit :deep(h2) {
+  color: var(--accent);
+  font-size: 12px;
+}
+.credit p {
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--fg-dim);
+  margin: 6px 0 0 0;
+}
+.credit a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent-line); }
+.credit a:hover { border-bottom-style: solid; }
+
+h3 {
+  margin: 0 0 8px 0;
+  color: var(--fg);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 6px;
+}
+.grid3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 6px;
+}
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 8px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-dim);
+  gap: 3px;
+}
+input {
+  padding: 3px 6px;
+  height: 24px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Numeric readout — meter strip */
+.readout {
+  padding: 6px 10px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--fg-dim);
+}
+.readout strong {
+  color: var(--accent);
+  font-weight: 600;
+  margin: 0 2px;
+}
+.muted {
+  color: var(--fg-subtle);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 4px 0 0 0;
+}
+
+/* Air-absorption table */
+table.absorb {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 6px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+table.absorb th, table.absorb td {
+  text-align: right;
+  padding: 3px 10px;
+  height: 22px;
+  border-bottom: 1px solid var(--border-soft);
+}
+table.absorb tr:last-child td { border-bottom: 0; }
+table.absorb th {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+}
+table.absorb th:first-child,
+table.absorb td:first-child { text-align: left; color: var(--fg); }
+table.absorb tbody tr:hover { background: var(--bg-2); }
+
+/* Floor-bounce comb plot — oscilloscope frame */
+.fb-plot {
+  width: 100%;
+  height: 160px;
+  background:
+    linear-gradient(transparent 49.5%, rgba(34,211,238,0.10) 50%, transparent 50.5%),
+    repeating-linear-gradient(90deg, transparent 0 59px, rgba(255,255,255,0.03) 59px 60px),
+    repeating-linear-gradient(0deg,  transparent 0 23px, rgba(255,255,255,0.03) 23px 24px),
+    radial-gradient(ellipse at center, #0b1220 0%, #050810 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 24px rgba(0,0,0,0.6);
+  margin-top: 4px;
+}
 </style>

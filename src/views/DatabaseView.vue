@@ -147,22 +147,132 @@ const columns = computed(() => {
 </template>
 
 <style scoped>
-.database { display: flex; flex-direction: column; gap: 12px; }
-.toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.type-tabs { display: flex; gap: 2px; margin-right: 16px; }
+.database {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  height: calc(100vh - 38px);
+}
+
+/* Top utility bar — segmented type selector + search + actions */
+.toolbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 6px 8px;
+  height: 38px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.type-tabs {
+  display: flex;
+  gap: 0;
+  margin-right: 8px;
+  padding: 2px;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+}
 .type-tabs .tab {
-  background: transparent; color: var(--fg-dim); border: 1px solid transparent;
+  background: transparent;
+  color: var(--fg-dim);
+  border: 1px solid transparent;
+  padding: 0 12px;
+  height: 22px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  box-shadow: none;
 }
-.type-tabs .tab.active { background: var(--bg-2); color: var(--fg); border-color: var(--border); }
-.search { flex: 1; min-width: 200px; max-width: 400px; }
-.panel { overflow: auto; max-height: calc(100vh - 200px); }
+.type-tabs .tab:hover { color: var(--fg); background: var(--bg-2); }
+.type-tabs .tab.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+
+.search {
+  flex: 1;
+  min-width: 200px;
+  max-width: 360px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.search::placeholder { color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.05em; font-size: 10px; }
+
 .file-btn {
-  display: inline-flex; align-items: center; padding: 6px 12px;
-  border: 1px solid var(--border); background: var(--bg-1);
-  border-radius: var(--radius-sm); cursor: pointer; font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%);
+  color: var(--fg);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  box-shadow: var(--shadow-1);
 }
-.file-btn:hover { background: var(--bg-2); }
-.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
-.fields label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.file-btn:hover { background: var(--bg-3); border-color: var(--border-strong); }
+
+/* Equipment ledger */
+.panel {
+  flex: 1;
+  overflow: auto;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+}
+.panel :deep(.table) { font-size: 11px; }
+.panel :deep(.table th) {
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.10em;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-1);
+  height: 26px;
+}
+.panel :deep(.table td) {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  padding: 3px 8px;
+  height: 24px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.panel :deep(.table tbody tr:nth-child(odd)) { background: rgba(255,255,255,0.012); }
+.panel :deep(.table tbody tr:hover) { background: var(--accent-soft); }
+
+/* Edit modal — denser fields */
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 10px 0;
+}
+.fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-dim);
+}
+footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-soft);
+}
 </style>

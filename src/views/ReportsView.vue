@@ -105,8 +105,108 @@ function makeXls(): void {
 </template>
 
 <style scoped>
-.reports { display: flex; flex-direction: column; gap: 16px; }
-.meta .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
-.meta label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
-.actions { display: flex; gap: 8px; }
+.reports {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.meta {
+  padding: 10px 12px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+}
+.meta :deep(h3) {
+  margin: 0 0 8px 0;
+  color: var(--fg);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.meta .grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+.meta label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-dim);
+}
+.meta input { font-family: var(--font-mono); font-size: 12px; text-align: left; }
+
+/* Action bar — export controls */
+.actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  height: 38px;
+}
+.actions::before {
+  content: "EXPORT";
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  color: var(--fg-subtle);
+  margin-right: 8px;
+  padding-right: 8px;
+  border-right: 1px solid var(--border-soft);
+}
+
+/* Bill-of-materials ledger */
+.panel {
+  overflow: auto;
+  max-height: calc(100vh - 220px);
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+}
+.panel :deep(.table) { font-size: 11px; }
+.panel :deep(.table th) {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--accent);
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  height: 26px;
+}
+.panel :deep(.table td) {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  padding: 3px 10px;
+  height: 24px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.panel :deep(.table tbody tr:nth-child(odd)) { background: rgba(255,255,255,0.012); }
+.panel :deep(.table tbody tr:hover) { background: var(--accent-soft); }
+.panel :deep(.table td.muted),
+.panel :deep(.table td:has(.muted)) {
+  text-align: center;
+  font-style: italic;
+  color: var(--fg-subtle);
+  padding: 24px;
+}
 </style>

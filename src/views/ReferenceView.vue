@@ -60,8 +60,103 @@
 </template>
 
 <style scoped>
-.reference { max-width: 800px; margin: 0 auto; }
-.reference h3 { margin-top: 18px; margin-bottom: 6px; color: var(--accent); }
-.reference p { margin: 6px 0; }
-.reference ul { padding-left: 22px; line-height: 1.8; }
+.reference {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 8px;
+}
+
+.reference .card {
+  padding: 16px 20px;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+}
+
+.reference :deep(h2) {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--fg);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.reference :deep(h2)::before {
+  content: "§";
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+.reference h3 {
+  margin-top: 20px;
+  margin-bottom: 4px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  padding-left: 10px;
+  border-left: 2px solid var(--accent);
+}
+
+.reference p {
+  margin: 6px 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--fg-dim);
+}
+
+/* Equation lines — typeset like LaTeX */
+.reference p.mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-left: 2px solid var(--accent-line);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 6px 10px;
+  margin: 4px 0;
+  letter-spacing: 0;
+}
+
+.reference .muted {
+  color: var(--fg-subtle);
+  font-size: 11px;
+  font-style: normal;
+  padding-left: 12px;
+  border-left: 1px dotted var(--border);
+  margin: 4px 0 8px 4px;
+}
+
+.reference ul {
+  padding-left: 0;
+  margin: 8px 0;
+  list-style: none;
+}
+.reference ul li {
+  padding: 4px 10px;
+  margin-bottom: 2px;
+  background: var(--bg);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--fg-dim);
+  line-height: 1.5;
+}
+.reference ul li strong {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-right: 6px;
+}
 </style>
