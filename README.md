@@ -1,169 +1,251 @@
+# Speaker Design Tool v4
 
-_New version with some bugfixes and minor addition to Equipment handling will be released soon._
+A browser-based simulation suite for designing Low-Z (4/8 Ω) and distributed (100 V / 70 V) loudspeaker installations. v4 is a full rewrite on a modern Vite + Vue 3 + TypeScript stack, with a spectral physics engine, a 3D room view, an SPL coverage heatmap, a set of acoustics calculators, and a subwoofer-array beamforming designer.
 
+---
 
-# Speaker Design Tool v3.0
+## What it does
 
-   
+For each branch of your signal chain the tool solves the transfer function across a log-spaced 20 Hz – 20 kHz grid:
 
-**A professional-grade, browser-based simulation engine for designing Low-Impedance (Low-Z) and Distributed (100V/70V) audio systems.**
+- **Cable:** loop R(T) with copper α = 0.00393/°C, optional skin-effect √f term, loop L → jωL.
+- **Speaker load:** flat nominal / `z_min` impedance across the band. Finished speaker products are modelled as flat loads; raw-driver resonances (Thiele-Small) are out of scope.
+- **100 V transformer:** reflected impedance V²/P plus insertion-loss band-pass (default 60 Hz / 15 kHz, 0.8 dB IL).
+- **Transmission:** voltage divider `I = Vsrc / |Zcable + Zload|`, `Vload = I · |Zload|`.
+- **Room:** Sabine / Eyring RT60, direct + reverberant diffuse-field SPL, critical distance, simplified Steeneken STI.
+- **Acoustics calculators:** speed of sound (Cramer 1993), wavelength/period, distance↔delay, phase↔delay, ISO 9613-1 air absorption, image-source floor bounce.
+- **Subwoofer arrays:** far-field polar response, near-field 2D coverage heatmap, 3D cabinet layout with distance dimensions. End-fire / broadside / cardioid ×2 / cardioid ×3 / arc presets plus a fully editable custom mode.
 
-[**Download Latest Version**](https://github.com/sindrehaugen/SpeakerDesignTool/archive/refs/heads/main.zip)
+Everything is pure functions — the UI reads a single reactive `analysis = computed(analyseChain(...))` derivation that replaces the old monolithic `calculateAll()`.
 
------
+---
 
-## 📖 Overview
-
-The **Speaker Design Tool** bridges the gap between theoretical electrical engineering and practical audio system design. Unlike simple calculators that only look at DC resistance, this tool features a comprehensive **Audio Physics Engine** that simulates the entire electrical signal chain.
-
-From the amplifier rack to the speaker voice coil, it models complex cable impedance (thermal & reactive), voltage drops, and frequency-dependent losses. Designed for AV integrators and consultants, it ensures designs meet critical performance and safety standards (IEC 60268-3) before a single cable is pulled.
-
------
-
-## 🏗️ Architecture & Tech Stack
-
-This project is built as a **Serverless Single Page Application (SPA)**. It requires no compilation, no build step, and no backend server. It runs entirely in the browser using modern ES6 modules.
-
-  * **Core Framework:** [Vue.js 3](https://vuejs.org/) (via CDN) - Reactive UI and State Management.
-  * **Styling:** [Tailwind CSS](https://tailwindcss.com/) (via CDN) - Utility-first styling.
-  * **PDF Generation:** [jsPDF](https://github.com/parallax/jsPDF) & [AutoTable](https://github.com/simonbengtsson/jsPDF-AutoTable) - Client-side report generation.
-  * **Persistence:** `localStorage` for auto-saving user preferences and custom databases.
-
-### File Structure
+## Running it
 
 ```bash
-v3/
-├── Speaker Design Tool.html  # Main entry point
-├── css/
-│   └── style.css             # Custom overrides and animations
-└── js/
-    ├── core/
-    │   ├── physics.js        # Complex Number class & AudioPhysics engine
-    │   └── database.js       # Default equipment & Quality Standards
-    ├── ui/
-    │   ├── main.js           # Main App Logic (State, Actions, Report Gen)
-    │   ├── views.js          # View Components (Calculator, Reports, DB)
-    │   └── components.js     # UI Components (Modals, Tree Nodes)
-    └── utils/
-        └── io.js             # File I/O, CSV Parsing, Excel XML Export
+npm install
+npm run dev        # http://localhost:5173
+npm run test       # Vitest — 46 unit tests across 7 files
+npm run typecheck  # vue-tsc strict
+npm run build      # production bundle in dist/
 ```
 
------
+Node 18+ is required.
 
-## ✨ Key Features
+---
 
-### 1\. Adaptive Quality Standards
+## Features
 
-The tool is context-aware. Instead of using a single fixed limit for "Pass/Fail", it evaluates your design against three distinct **Standard Modes**:
+### Calculator tab
 
-  * **High-End (Reference):** Strict tolerances (\< 5% Voltage Drop, \> 20 Damping Factor). Designed for concert venues, studios, and critical listening environments where audio fidelity is paramount.
-  * **Average (BGM):** Balanced thresholds (\< 10% Voltage Drop). Optimized for retail, hospitality, and commercial background music systems where cost-efficiency and performance must meet.
-  * **Speech (Paging):** Relaxed limits (\< 15% Voltage Drop). Ideal for 100V EVAC, voice paging, and industrial distributed systems where intelligibility and cable run length are the priority over spectral flatness.
+Hierarchical signal-chain builder with live per-node voltage drop, load Ω, HF loss and amplifier headroom grading against three quality targets (High-end 5 %, Average 10 %, Speech 15 %).
 
-**Dynamic Thresholding:** **The Audio Physics Engine** automatically shifts the trigger points for Warnings (Orange) and Errors (Red) based on the selected mode.
+### Database tab
 
-### 2\. The Audio Physics Engine
+Edit / import / export Speakers, Cables, Amplifiers (CSV + JSON). Defaults load from `src/data/` on first run; edits persist to `localStorage`.
 
-  * **Infinite Daisy Chaining:** Supports unlimited depth of speaker connections (e.g., `Amp -> Speaker 1 -> Speaker 2 -> ...`).
-  * **Complex Impedance:** Calculates $Z = R + jX_L$. It accounts for **Inductive Reactance**, which causes high-frequency roll-off in long cable runs.
-  * **Thermal Derating:** Automatically increases copper resistance by **0.393% per °C** based on the ambient temperature setting.
+### Room & Coverage tab
 
-### 3\. Intelligent Workflows
+Three.js 3D view of the installation:
 
-  * **Segmented Cabling:** Supports dual-segment cable runs for real-world installation scenarios.
-      * *Example:* Run a heavy-gauge backbone (e.g., 4mm² / 12AWG) for the long 50m distance to a junction box, then step down to a thinner, flexible cable (e.g., 1.5mm² / 16AWG) for the final 3m drop to the speaker to fit into small Euroblock terminals. The engine calculates the combined impedance vector of both segments.
-  * **Cable Wizard (🪄):** A brute-force simulation tool. Select a speaker line, and the Wizard runs hundreds of simulations against your entire cable database to find the most cost-effective cable that meets your target Voltage Drop limit. **Works best in combination with the Brand Filter** to instantly find the optimal cable from a specific manufacturer (e.g., finding the perfect *Belden* cable for a specific run).
-  * **Smart Brand Filtering:** The calculator includes dynamic filters above every equipment dropdown. Instantly narrow down huge databases to find specific products from manufacturers like *Bose*, *QSC*, or *Biamp*.
-  * **Amplifier Channel Tracking:** The system tracks channel usage per amplifier instance (e.g., `A-1`). It visually greys out used channels to prevent over-subscribing an amplifier frame.
-  * **Bridge Mode Support:** Toggles amplifier channels into Bridge-Tied Load (BTL) mode, doubling voltage swing and adjusting minimum load thresholds automatically.
+- Place speakers as ceiling / wall / pendant / stand mounts with individual aim vectors.
+- Mark obstacles, stages, raked-floor slopes and multiple listeners.
+- Listener-plane SPL coverage heatmap (canvas-textured plane in 3D).
+- Per-listener readout: SPL, STI, effective height when tied to a slope.
+- RT60 (Sabine / Eyring), critical distance, diffuse-field SPL, Steeneken STI.
 
-### 4\. Data Portability
+### Acoustics calculators tab
 
-  * **Self-Contained Project Files:** Save projects as `.json`. You can choose to **embed your custom database** inside the project file, ensuring that if you send the file to a colleague, they see your exact equipment specs even if they don't have them in their library.
-  * **Excel Integration:** Exports a multi-sheet `.xls` file containing Bill of Materials (BOM), Cabling Schedules, and Technical Data.
+Standalone tools, independent of the rest of the design — every output is driven by a shared environment block (temperature °C, relative humidity %, atmospheric pressure Pa):
 
------
+- **Speed of sound (Cramer 1993)** — full humid-air formula including CO₂ mole fraction.
+- **Wavelength & period** from frequency.
+- **Distance ↔ delay** conversions.
+- **Phase ↔ delay** conversions (with sign-convention note).
+- **Air absorption (ISO 9613-1)** — α(f) in dB/m and total loss over a user distance, tabulated across the eight octave bands 125 Hz – 16 kHz.
+- **Floor-bounce comb filter** — image-source interference magnitude over 50 Hz – 20 kHz, plotted on a log-frequency axis.
+- **Subwoofer array designer** — see below.
 
-## 📐 Technical Standards Reference
+All calculators attribute their pedagogy to Merlijn van Veen (https://www.merlijnvanveen.nl/en/calculators). Detailed derivations and citations are in [`docs/ACOUSTICS.md`](docs/ACOUSTICS.md).
 
-The tool evaluates your design dynamically based on your selected **Quality Standard**:
+### Subwoofer array designer
 
-| Metric | High-End (Reference) | Average (BGM) | Speech (Paging) | Impact |
-| :--- | :--- | :--- | :--- | :--- |
-| **Voltage Drop** | Warning: \> 5% <br> Error: \> 7.5% | Warning: \> 10% <br> Error: \> 15% | Warning: \> 15% <br> Error: \> 22.5% | Dynamics, Compression |
-| **Damping Factor** | Warning: \< 20 <br> Error: \< 10 | Warning: \< 10 <br> Error: \< 5 | Warning: \< 5 <br> Error: \< 2 | Bass Tightness |
-| **HF Check Freq** | 10 kHz | 6 kHz | 4 kHz | Clarity / "Air" |
+Three linked visualisations of the same reactive array model:
 
------
+1. **Polar response** (2D SVG, −30 dB centre → 0 dB outer ring) at a user-selected analysis frequency.
+2. **Near-field 2D coverage heatmap** — canvas-rendered complex pressure sum over the horizontal plane, coloured −30 dB (deep blue) → +6 dB (red). Field size is adjustable 3 – 40 m.
+3. **3D array layout** — Three.js scene with one cabinet per unit, user-editable box dimensions, centre-to-centre distance callouts (yellow dashed), and total footprint brackets (blue). Drag to orbit, scroll to zoom.
 
-## 💾 Database Management
+Presets: End-fire, Broadside, Cardioid ×2, Cardioid ×3, Arc, Custom. Readout shows forward / rear magnitude and front-to-back ratio at the analysis frequency. See [`docs/SUB_ARRAY.md`](docs/SUB_ARRAY.md) for the full beamforming derivation, preset math, and testable invariants.
 
-The tool comes with a robust database manager. You can add items manually or import them via CSV.
+### Reports tab
 
-### CSV Import Format
+Landscape A4 PDF (via jsPDF + AutoTable) with cover page, BOM, per-node analysis rows, and optional screenshots. Zero-dependency `.xls` export (SpreadsheetML 2003) for Excel round-trip.
 
-To bulk import equipment, create a `.csv` file with the following headers. (Order does not matter, headers are case-insensitive).
+### Charts
 
-**1. Speakers**
+Chart.js impedance-vs-frequency curve for the selected node, overlaid with the transfer-function magnitude.
 
-```csv
-brand, model, impedance, wattage_rms, wattage_peak, taps
-JBL, Control 25-1, 8, 100, 200, "30,15,7.5,3.7"
-Bose, DS16F, 8, 16, 64, "16,8,4,2,1"
+### Persistence
+
+Database, project preferences, and room layout are auto-saved through a
+single storage abstraction (`src/services/storage.ts`). The same three keys
+are used in both backends, so data round-trips cleanly between `npm run dev`
+and the packaged desktop app:
+
+| Key | Contents |
+|---|---|
+| `sdt_database_v4` | user-edited speakers / cables / amps |
+| `sdt_user_prefs_v4` | project title, acceptance thresholds, environment |
+| `sdt_room_v4` | geometry, speakers, obstacles, slopes, listeners |
+
+- **Browser (`npm run dev`, `npm run preview`):** `localStorage`, same as before.
+- **Desktop (`npm run tauri:dev`, packaged `.exe`):** JSON files in
+  `%APPDATA%\com.speakerdesigntool.app\` (one file per key). Writes are
+  debounced (250 ms) and flushed on window close. On first launch inside
+  Tauri, any existing `localStorage` data is automatically migrated to disk.
+
+---
+
+## Desktop packaging (Tauri)
+
+The Vue/Vite frontend is wrapped by a Rust + WebView2 shell under
+`src-tauri/` to produce a standalone Windows `.exe` + installers.
+
+### One-time prerequisite
+
+Install the Rust toolchain (the `.exe` built from it has no Rust runtime
+dependency — only the build host needs Rust):
+
+```powershell
+winget install Rustlang.Rustup
+rustup default stable
 ```
 
-**2. Cables**
+Windows 10/11 already ships Edge WebView2, so no other runtimes are needed.
 
-```csv
-brand, model, crossSection, resistance, capacitance, inductance
-Belden, 5000UP, 2.5, 12.1, 120, 0.7
-Generic, CAT6, 0.2, 140, 50, 0.5
+### Scripts
+
+```bash
+npm run tauri:dev     # hot-reload dev window (runs Vite + Rust shell together)
+npm run tauri:build   # release build → src-tauri/target/release/
+npm run tauri:icon    # regenerate icon set from src-tauri/app-icon.png
 ```
 
-*Note: `resistance` is in Ohms/km.*
+### What gets produced
 
-**3. Amplifiers**
+`npm run tauri:build` emits:
 
-```csv
-brand, model, watt_8, watt_4, watt_100v, channels_lowz
-Crown, CDi 1000, 500, 700, 700, 2
-Powersoft, Mezzo 604, 150, 150, 150, 4
+- `src-tauri/target/release/Speaker Design Tool.exe` — standalone ~10 MB executable
+- `src-tauri/target/release/bundle/msi/*.msi` — Windows Installer package
+- `src-tauri/target/release/bundle/nsis/*-setup.exe` — NSIS installer
+
+Ship any of the installers or the bare `.exe` — double-clicking it launches
+the app without a dev server. The first run creates
+`%APPDATA%\com.speakerdesigntool.app\` for persistent state.
+
+### Icon
+
+`src-tauri/app-icon.png` is a 1024×1024 placeholder. Drop in a real square
+PNG and re-run `npm run tauri:icon` to regenerate every platform variant.
+
+---
+
+## Architecture
+
+```
+src/
+  core/             Pure physics — no DOM, fully Vitest-covered
+    complex.ts        Complex-number algebra (add/mul/div/polar/magnitude/phase)
+    grid.ts           Log-spaced frequency grids + helpers
+    cable.ts          R(T), skin-effect, loop inductance, series impedance
+    driver.ts         Flat nominal / z_min speaker load
+    transformer.ts    100 V reflected impedance + IL band-pass
+    transmission.ts   Voltage-divider transfer function
+    engine.ts         analyseChain — single reactive root for the whole UI
+    room.ts           Sabine/Eyring RT60, direct+reverberant SPL, STI, geometry helpers
+    mvv.ts            Acoustics calculators (Cramer c, ISO 9613-1 α, floor bounce, …)
+    subArray.ts       Sub-array beamforming: phasor sum, presets, polar response
+    __tests__/        Vitest suites — 46 tests across 7 files
+
+  types/            domain.ts (Speaker, Cable, Amp, Project) + physics.ts
+
+  stores/           Pinia
+    database.ts       library CRUD + import/export
+    project.ts        current project + reactive analysis tree
+    room.ts           geometry, listeners, slopes, obstacles
+    ui.ts             tab state, modals, wizard
+
+  services/         io.ts (CSV/JSON/XLS) · report.ts (PDF) · wizard.ts (cable chooser)
+                    storage.ts (Tauri-FS ↔ localStorage persistence layer)
+
+  components/
+    charts/           Chart.js wrappers
+    modals/           AmpSelect, CableWizard, MissingData, SaveProject
+    tree/             Recursive TreeNode (calculator tree)
+
+  views/            Top-level tabs
+    CalculatorView.vue    signal-chain tree + per-node analysis
+    DatabaseView.vue      library editor
+    RoomView.vue          Three.js 3D scene + heatmap
+    CalculatorsView.vue   acoustics calculators + sub-array designer
+    ReportsView.vue       PDF / XLS export
+    ReferenceView.vue     in-app formula reference
+
+  data/             Default equipment library + quality profiles
+  styles/           Design-token CSS (no Tailwind)
+
+src-tauri/          Rust + WebView2 desktop shell (tauri build → .exe)
+  tauri.conf.json     app identity, window, bundle targets
+  Cargo.toml          Rust manifest (tauri + tauri-plugin-fs)
+  src/                Rust entry (main.rs, lib.rs) — thin, just wires plugins
+  capabilities/       fs-plugin scope limited to %APPDATA%
+  icons/              generated from app-icon.png via `tauri icon`
 ```
 
------
+The v3 single-file HTML implementation has been moved to `legacy/` for reference.
 
-## 🚀 User Guide
+---
 
-### Step 1: Configuration
+## Testing
 
-  * Open `Speaker Design Tool.html`.
-  * Set **Project Name**.
-  * Set **Temperature**: Critical for ceiling installs. A 40°C void increases resistance by \~8% compared to 20°C specs.
-  * Select **Mode**: `Low-Z` for performance audio, `100V` for distributed paging.
+All physics lives in pure functions under `src/core/` and is covered by Vitest. 46 tests across 7 files; representative invariants:
 
-### Step 2: Build the Chain
+| Suite | What it pins |
+|---|---|
+| `complex.test.ts` | magnitude/phase/add/mul/div/polar round-trip |
+| `cable.test.ts` | R(T) linearity, skin-effect > 0 above threshold, loop L sanity |
+| `driver.test.ts` | flat load behaviour; z_min fallback |
+| `engine.test.ts` | analyseChain produces consistent voltage/current/SPL at each node |
+| `room.test.ts` | Sabine vs Eyring convergence, direct+reverberant SPL, STI bounds |
+| `mvv.test.ts` | Cramer c at reference conditions, α(f) monotonic vs f, floor bounce nulls at predicted frequencies |
+| `subArray.test.ts` | End-fire always coherent forward + deep rear null at c/(4d); cardioid pair perfect rear cancellation + LF penalty; cardioid triple rear null; broadside symmetry; polar endpoints match at 0°/360°; arc stays coherent on axis |
 
-1.  Click **+ Add New Line**.
-2.  **Select Amplifier:** Choose an existing amp or click `+ New...` to add one from the database.
-3.  **Select Speaker & Cable:** Choose your components. Use the **Brand Filter** to quickly find your manufacturer.
-4.  **Daisy Chaining:** Click the **Down Arrow (↓)** on a row to add a speaker connected *to* that speaker (series/parallel chain).
+Run the full suite with `npm test`, or `npm run test:watch` during development.
 
-### Step 3: Analyze & Optimize
+---
 
-  * Check the **Status** column.
-  * **Orange Warning:** Functional but sub-optimal (e.g., 12% drop in a BGM system).
-  * **Red Error:** Critical failure (e.g., cable too thin, amp overloaded, impedance too low).
-  * **Fix:** Click the **Wand (🪄)** icon next to the cable length to run the **Cable Wizard** and auto-select the correct gauge.
+## Knowledge graph
 
-### Step 4: Generate Report
+The project ships a graph of its own codebase — run `/graphify` to rebuild:
 
-  * Go to the **Reports** tab.
-  * Enter **Company/Designer** info.
-  * Upload a **Logo** (JPG/PNG).
-  * Click **Generate PDF** for a client presentation or **Export Excel** for the procurement team.
+- `graphify-out/graph.html` — interactive force-directed graph
+- `graphify-out/GRAPH_REPORT.md` — god nodes, surprising cross-community edges, suggested exploratory queries
+- `graphify-out/graph.json` — raw node/edge data (MCP-queryable)
 
------
+---
 
-## 📄 License
+## Physics reference
 
-This project is licensed under the **GNU General Public License v3.0 (GPLv3)**. You are free to use, modify, and distribute this software.
+See the **Reference** tab in the app, or `src/views/ReferenceView.vue`, for the full set of formulas with citations. Deeper dives for the acoustics calculators and sub-array designer live in `docs/`.
+
+- [`docs/ACOUSTICS.md`](docs/ACOUSTICS.md) — speed of sound, air absorption, floor bounce, delay/phase conversions, with full derivations and ISO references.
+- [`docs/SUB_ARRAY.md`](docs/SUB_ARRAY.md) — beamforming model, preset math, the three visualisation layers (polar / 2D coverage / 3D layout), and how the unit tests pin each invariant.
+
+## Credits
+
+- The MVV acoustics calculators and subwoofer-array pedagogy are implementations of **Merlijn van Veen's** freely-published Excel calculators: https://www.merlijnvanveen.nl/en/calculators. This project re-implements the underlying formulae in TypeScript so they can feed the design tool and be unit-tested. Credit for the educational work belongs to him.
+
+## License
+
+See [LICENSE](LICENSE).

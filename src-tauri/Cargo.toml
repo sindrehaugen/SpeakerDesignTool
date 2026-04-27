@@ -1,0 +1,26 @@
+[package]
+name = "speaker-design-tool"
+version = "3.0.0"
+description = "Speaker installation design tool"
+authors = ["Speaker Design Tool contributors"]
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "speaker_design_tool_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-fs = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+# Enable the custom-protocol feature for production bundles so Tauri serves
+# the frontend over `tauri://` instead of localhost.
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

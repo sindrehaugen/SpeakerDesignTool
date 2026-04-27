@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speaker Design Tool v3.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/style.css">
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <script>
+        window.App = { Core: {}, State: {}, UI: {}, Utils: {} };
+    </script>
+</head>
+
+<body class="bg-zinc-900 text-zinc-100 h-screen w-screen overflow-hidden font-sans selection:bg-zinc-700 selection:text-white">
+    <div id="app" class="h-full flex flex-col" v-cloak>
+        <app-header 
+            :current-view="currentView" 
+            @view-change="currentView = $event"
+            @generate-report="generateReport"
+            @save-project="saveProject"
+            @load-project="loadProject">
+        </app-header>
+
+        <main class="flex-1 flex flex-col overflow-hidden p-4 md:p-6 gap-6 relative">
+            <component 
+                :is="currentViewComponent"
+                @generate-report="generateReport"
+                @generate-xls="generateXLS"
+                @save-project="saveProject">
+            </component>
+        </main>
+
+        <amp-select-modal 
+            :visible="showAmpModal" 
+            @close="showAmpModal = false" 
+            @select="handleAmpSelect">
+        </amp-select-modal>
+
+        <cable-wizard-modal
+            :visible="wizardState.visible"
+            :candidates="wizardState.candidates"
+            :limit="wizardState.limit"
+            @close="wizardState.visible = false"
+            @select="handleWizardSelect">
+        </cable-wizard-modal>
+
+        <missing-data-modal
+            :visible="missingDataState.visible"
+            :title="missingDataState.title"
+            :fields="missingDataState.fields"
+            :initial-data="missingDataState.initialData"
+            @save="handleMissingDataSave">
+        </missing-data-modal>
+
+        <save-project-modal
+            :visible="showSaveModal"
+            @close="showSaveModal = false"
+            @select="handleSaveSelect">
+        </save-project-modal>
+
+        <reset-defaults-modal
+            :visible="false" 
+            target="Database">
+        </reset-defaults-modal>
+    </div>
+
+    <script src="js/utils/io.js"></script>
+    <script src="js/core/physics.js"></script>
+    <script src="js/core/database.js"></script>
+    <script src="js/ui/components.js"></script>
+    <script src="js/ui/views.js"></script>
+    <script src="js/ui/main.js"></script>
+</body>
+</html>

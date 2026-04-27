@@ -1,0 +1,10 @@
+node_modules
+dist
+src-tauri/target
+src-tauri/gen
+*.tsbuildinfo
+.DS_Store
+.claude
+graphify-out
+mvv_extract
+.graphify_python
