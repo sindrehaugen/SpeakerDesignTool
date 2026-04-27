@@ -1,230 +1,230 @@
--<-s-c-r-i-p-t- -s-e-t-u-p- -l-a-n-g-=-"-t-s-"->-
--i-m-p-o-r-t- -{- -c-o-m-p-u-t-e-d-,- -o-n-B-e-f-o-r-e-U-n-m-o-u-n-t-,- -o-n-M-o-u-n-t-e-d-,- -r-e-f-,- -w-a-t-c-h- -}- -f-r-o-m- -'-v-u-e-'-
--i-m-p-o-r-t- -{-
-- - -s-p-e-e-d-O-f-S-o-u-n-d-,- -w-a-v-e-l-e-n-g-t-h-,- -p-e-r-i-o-d-,-
-- - -d-e-l-a-y-F-r-o-m-D-i-s-t-a-n-c-e-,- -d-i-s-t-a-n-c-e-F-r-o-m-D-e-l-a-y-,-
-- - -p-h-a-s-e-F-r-o-m-D-e-l-a-y-,- -d-e-l-a-y-F-r-o-m-P-h-a-s-e-,-
-- - -a-i-r-A-b-s-o-r-p-t-i-o-n-,- -a-i-r-A-b-s-o-r-p-t-i-o-n-D-b-,-
-- - -f-l-o-o-r-B-o-u-n-c-e-,- -l-o-g-F-r-e-q-u-e-n-c-y-G-r-i-d-,-
--}- -f-r-o-m- -'-@-/-c-o-r-e-/-m-v-v-'-
--
--/-/- -E-n-v-i-r-o-n-m-e-n-t- -c-o-n-t-r-o-l-s- -s-h-a-r-e-d- -b-y- -s-e-v-e-r-a-l- -c-a-l-c-u-l-a-t-o-r-s-.-
--c-o-n-s-t- -T-_-C- -=- -r-e-f-(-2-0-)-
--c-o-n-s-t- -R-H- -=- -r-e-f-(-5-0-)-
--c-o-n-s-t- -p-_-a-t-m- -=- -r-e-f-(-1-0-1-3-2-5-)-
--c-o-n-s-t- -c- -=- -c-o-m-p-u-t-e-d-(-(-)- -=->- -s-p-e-e-d-O-f-S-o-u-n-d-(-T-_-C-.-v-a-l-u-e-,- -R-H-.-v-a-l-u-e-,- -p-_-a-t-m-.-v-a-l-u-e-)-)-
--
--/-/- -W-a-v-e-l-e-n-g-t-h- -/- -p-e-r-i-o-d-.-
--c-o-n-s-t- -f-r-e-q- -=- -r-e-f-(-1-0-0-0-)-
--c-o-n-s-t- -l-a-m-b-d-a- -=- -c-o-m-p-u-t-e-d-(-(-)- -=->- -w-a-v-e-l-e-n-g-t-h-(-f-r-e-q-.-v-a-l-u-e-,- -c-.-v-a-l-u-e-)-)-
--c-o-n-s-t- -p-e-r-i-o-d-M-s- -=- -c-o-m-p-u-t-e-d-(-(-)- -=->- -p-e-r-i-o-d-(-f-r-e-q-.-v-a-l-u-e-)- -*- -1-0-0-0-)-
--
--/-/- -D-i-s-t-a-n-c-e- -↔- -d-e-l-a-y-.-
--c-o-n-s-t- -d-i-s-t-M- -=- -r-e-f-(-1-0-)-
--c-o-n-s-t- -d-e-l-a-y-M-s- -=- -c-o-m-p-u-t-e-d-(-(-)- -=->- -d-e-l-a-y-F-r-o-m-D-i-s-t-a-n-c-e-(-d-i-s-t-M-.-v-a-l-u-e-,- -c-.-v-a-l-u-e-)- -*- -1-0-0-0-)-
--c-o-n-s-t- -d-e-l-a-y-I-n-p-u-t- -=- -r-e-f-(-1-0-)-
--c-o-n-s-t- -d-i-s-t-F-r-o-m-D-e-l-a-y- -=- -c-o-m-p-u-t-e-d-(-(-)- -=->- -d-i-s-t-a-n-c-e-F-r-o-m-D-e-l-a-y-(-d-e-l-a-y-I-n-p-u-t-.-v-a-l-u-e- -/- -1-0-0-0-,- -c-.-v-a-l-u-e-)-)-
--
--/-/- -P-h-a-s-e- -↔- -d-e-l-a-y-.-
--c-o-n-s-t- -p-h-a-s-e-F-r-e-q- -=- -r-e-f-(-1-0-0-0-)-
--c-o-n-s-t- -p-h-a-s-e-D-e-l-a-y-M-s- -=- -r-e-f-(-1-)-
--c-o-n-s-t- -p-h-a-s-e-D-e-g- -=- -c-o-m-p-u-t-e-d-(-(-)- -=->- -p-h-a-s-e-F-r-o-m-D-e-l-a-y-(-p-h-a-s-e-D-e-l-a-y-M-s-.-v-a-l-u-e- -/- -1-0-0-0-,- -p-h-a-s-e-F-r-e-q-.-v-a-l-u-e-)-)-
--c-o-n-s-t- -p-h-a-s-e-I-n-p-u-t-D-e-g- -=- -r-e-f-(-1-8-0-)-
--c-o-n-s-t- -d-e-l-a-y-F-r-o-m-P-h-a-s-e-M-s- -=- -c-o-m-p-u-t-e-d-(-(-)- -=->- -d-e-l-a-y-F-r-o-m-P-h-a-s-e-(-p-h-a-s-e-I-n-p-u-t-D-e-g-.-v-a-l-u-e-,- -p-h-a-s-e-F-r-e-q-.-v-a-l-u-e-)- -*- -1-0-0-0-)-
--
--/-/- -A-i-r- -a-b-s-o-r-p-t-i-o-n-.-
--c-o-n-s-t- -a-b-s-o-r-b-D-i-s-t- -=- -r-e-f-(-3-0-)-
--c-o-n-s-t- -a-b-s-o-r-b-B-a-n-d-s- -=- -[-1-2-5-,- -2-5-0-,- -5-0-0-,- -1-0-0-0-,- -2-0-0-0-,- -4-0-0-0-,- -8-0-0-0-,- -1-6-0-0-0-]-
--c-o-n-s-t- -a-b-s-o-r-b-R-o-w-s- -=- -c-o-m-p-u-t-e-d-(-(-)- -=->-
-- - -a-b-s-o-r-b-B-a-n-d-s-.-m-a-p-(-(-f-)- -=->- -(-{-
-- - - - -f-,-
-- - - - -a-l-p-h-a-:- -a-i-r-A-b-s-o-r-p-t-i-o-n-(-f-,- -T-_-C-.-v-a-l-u-e-,- -R-H-.-v-a-l-u-e-,- -p-_-a-t-m-.-v-a-l-u-e-)-,-
-- - - - -d-B-:- -a-i-r-A-b-s-o-r-p-t-i-o-n-D-b-(-f-,- -a-b-s-o-r-b-D-i-s-t-.-v-a-l-u-e-,- -T-_-C-.-v-a-l-u-e-,- -R-H-.-v-a-l-u-e-,- -p-_-a-t-m-.-v-a-l-u-e-)-,-
-- - -}-)-)-,-
--)-
--
--/-/- -F-l-o-o-r- -b-o-u-n-c-e-.-
--c-o-n-s-t- -f-b-D-i-s-t- -=- -r-e-f-(-4-)-
--c-o-n-s-t- -f-b-S-r-c-H- -=- -r-e-f-(-1-.-2-)-
--c-o-n-s-t- -f-b-M-i-c-H- -=- -r-e-f-(-1-.-2-)-
--c-o-n-s-t- -f-b-R-e-f-l-e-c-t- -=- -r-e-f-(-0-.-8-)-
--c-o-n-s-t- -f-b-G-r-i-d- -=- -l-o-g-F-r-e-q-u-e-n-c-y-G-r-i-d-(-5-0-,- -2-0-0-0-0-,- -1-2-0-)-
--c-o-n-s-t- -f-b-S-a-m-p-l-e-s- -=- -c-o-m-p-u-t-e-d-(-(-)- -=->-
-- - -f-b-G-r-i-d-.-m-a-p-(-(-f-)- -=->- -(-{-
-- - - - -f-,-
-- - - - -d-b-:- -f-l-o-o-r-B-o-u-n-c-e-(-f-,- -f-b-D-i-s-t-.-v-a-l-u-e-,- -f-b-S-r-c-H-.-v-a-l-u-e-,- -f-b-M-i-c-H-.-v-a-l-u-e-,- -f-b-R-e-f-l-e-c-t-.-v-a-l-u-e-,- -c-.-v-a-l-u-e-)-,-
-- - -}-)-)-,-
--)-
--c-o-n-s-t- -f-b-V-i-e-w-B-o-x- -=- -'-0- ---2-4- -6-0-0- -4-8-'-
--c-o-n-s-t- -f-b-P-a-t-h- -=- -c-o-m-p-u-t-e-d-(-(-)- -=->- -{-
-- - -c-o-n-s-t- -f-M-i-n- -=- -M-a-t-h-.-l-o-g-1-0-(-f-b-G-r-i-d-[-0-]-!-)-
-- - -c-o-n-s-t- -f-M-a-x- -=- -M-a-t-h-.-l-o-g-1-0-(-f-b-G-r-i-d-[-f-b-G-r-i-d-.-l-e-n-g-t-h- --- -1-]-!-)-
-- - -c-o-n-s-t- -x-O-f- -=- -(-f-:- -n-u-m-b-e-r-)- -=->- -(-(-M-a-t-h-.-l-o-g-1-0-(-f-)- --- -f-M-i-n-)- -/- -(-f-M-a-x- --- -f-M-i-n-)-)- -*- -6-0-0-
-- - -c-o-n-s-t- -y-O-f- -=- -(-d-b-:- -n-u-m-b-e-r-)- -=->- ---d-b- -/-/- -1- -p-x- -p-e-r- -d-B-,- -c-e-n-t-r-e- -a-t- -0-
-- - -r-e-t-u-r-n- -f-b-S-a-m-p-l-e-s-.-v-a-l-u-e-
-- - - - -.-m-a-p-(-(-s-,- -i-)- -=->- -`-$-{-i- -=-=-=- -0- -?- -'-M-'- -:- -'-L-'-}-$-{-x-O-f-(-s-.-f-)-.-t-o-F-i-x-e-d-(-1-)-}-,-$-{-y-O-f-(-s-.-d-b-)-.-t-o-F-i-x-e-d-(-1-)-}-`-)-
-- - - - -.-j-o-i-n-(-'- -'-)-
--}-)-
--
--f-u-n-c-t-i-o-n- -f-m-t-(-n-:- -n-u-m-b-e-r-,- -d-i-g-i-t-s- -=- -2-)-:- -s-t-r-i-n-g- -{-
-- - -i-f- -(-!-N-u-m-b-e-r-.-i-s-F-i-n-i-t-e-(-n-)-)- -r-e-t-u-r-n- -'-–-'-
-- - -r-e-t-u-r-n- -n-.-t-o-F-i-x-e-d-(-d-i-g-i-t-s-)-
--}-
--
--<-/-s-c-r-i-p-t->-
--
--<-t-e-m-p-l-a-t-e->-
-- - -<-d-i-v- -c-l-a-s-s-=-"-c-a-l-c-s-"->-
-- - - - -<-d-i-v- -c-l-a-s-s-=-"-c-a-r-d- -c-r-e-d-i-t-"->-
-- - - - - - -<-h-2->-A-c-o-u-s-t-i-c-s- -c-a-l-c-u-l-a-t-o-r-s-<-/-h-2->-
-- - - - - - -<-p->-
-- - - - - - - - -T-h-e-s-e- -c-a-l-c-u-l-a-t-o-r-s- -a-r-e- -b-a-s-e-d- -o-n- -t-h-e- -w-o-r-k- -o-f-
-- - - - - - - - -<-a- -h-r-e-f-=-"-h-t-t-p-s-:-/-/-w-w-w-.-m-e-r-l-i-j-n-v-a-n-v-e-e-n-.-n-l-/-e-n-/-c-a-l-c-u-l-a-t-o-r-s-"- -t-a-r-g-e-t-=-"-_-b-l-a-n-k-"- -r-e-l-=-"-n-o-o-p-e-n-e-r-"->-M-e-r-l-i-j-n- -v-a-n- -V-e-e-n-<-/-a->-.-
-- - - - - - - - -T-h-e- -o-r-i-g-i-n-a-l- -E-x-c-e-l- -s-p-r-e-a-d-s-h-e-e-t-s- -a-r-e- -f-r-e-e-l-y- -a-v-a-i-l-a-b-l-e- -o-n- -h-i-s- -w-e-b-s-i-t-e-;- -t-h-i-s-
-- - - - - - - - -p-a-n-e-l- -r-e---i-m-p-l-e-m-e-n-t-s- -t-h-e- -s-a-m-e- -f-o-r-m-u-l-a-e- -(-C-r-a-m-e-r- -1-9-9-3- -s-p-e-e-d- -o-f- -s-o-u-n-d-,-
-- - - - - - - - -I-S-O- -9-6-1-3---1- -a-i-r- -a-b-s-o-r-p-t-i-o-n-,- -i-m-a-g-e---s-o-u-r-c-e- -c-o-m-b- -f-i-l-t-e-r-i-n-g-,- -e-t-c-.-)- -i-n-
-- - - - - - - - -T-y-p-e-S-c-r-i-p-t- -s-o- -t-h-e-y- -c-a-n- -f-e-e-d- -t-h-e- -d-e-s-i-g-n- -t-o-o-l- -a-n-d- -b-e- -u-n-i-t---t-e-s-t-e-d-.- -C-r-e-d-i-t-
-- - - - - - - - -f-o-r- -p-u-l-l-i-n-g- -t-h-e-s-e- -f-o-r-m-u-l-a-e- -t-o-g-e-t-h-e-r- -i-n-t-o- -a-c-c-e-s-s-i-b-l-e- -c-a-l-c-u-l-a-t-o-r-s- -b-e-l-o-n-g-s-
-- - - - - - - - -t-o- -M-e-r-l-i-j-n- -v-a-n- -V-e-e-n-.-
-- - - - - - -<-/-p->-
-- - - - -<-/-d-i-v->-
--
-- - - - -<-d-i-v- -c-l-a-s-s-=-"-c-a-r-d-"->-
-- - - - - - -<-h-3->-E-n-v-i-r-o-n-m-e-n-t-<-/-h-3->-
-- - - - - - -<-d-i-v- -c-l-a-s-s-=-"-g-r-i-d-3-"->-
-- - - - - - - - -<-l-a-b-e-l->-T-e-m-p-e-r-a-t-u-r-e- -(-°-C-)-
-- - - - - - - - - - -<-i-n-p-u-t- -t-y-p-e-=-"-n-u-m-b-e-r-"- -s-t-e-p-=-"-0-.-5-"- -v---m-o-d-e-l-.-n-u-m-b-e-r-=-"-T-_-C-"- -/->-
-- - - - - - - - -<-/-l-a-b-e-l->-
-- - - - - - - - -<-l-a-b-e-l->-R-e-l-a-t-i-v-e- -h-u-m-i-d-i-t-y- -(-%-)-
-- - - - - - - - - - -<-i-n-p-u-t- -t-y-p-e-=-"-n-u-m-b-e-r-"- -s-t-e-p-=-"-1-"- -m-i-n-=-"-0-"- -m-a-x-=-"-1-0-0-"- -v---m-o-d-e-l-.-n-u-m-b-e-r-=-"-R-H-"- -/->-
-- - - - - - - - -<-/-l-a-b-e-l->-
-- - - - - - - - -<-l-a-b-e-l->-A-t-m-o-s-p-h-e-r-i-c- -p-r-e-s-s-u-r-e- -(-P-a-)-
-- - - - - - - - - - -<-i-n-p-u-t- -t-y-p-e-=-"-n-u-m-b-e-r-"- -s-t-e-p-=-"-1-0-0-"- -v---m-o-d-e-l-.-n-u-m-b-e-r-=-"-p-_-a-t-m-"- -/->-
-- - - - - - - - -<-/-l-a-b-e-l->-
-- - - - - - -<-/-d-i-v->-
-- - - - - - -<-p- -c-l-a-s-s-=-"-r-e-a-d-o-u-t-"->-
-- - - - - - - - -S-p-e-e-d- -o-f- -s-o-u-n-d- -<-s-t-r-o-n-g->-c- -=- -{-{- -f-m-t-(-c-,- -2-)- -}-}- -m-/-s-<-/-s-t-r-o-n-g->-
-- - - - - - -<-/-p->-
-- - - - -<-/-d-i-v->-
--
-- - - - -<-d-i-v- -c-l-a-s-s-=-"-c-a-r-d-"->-
-- - - - - - -<-h-3->-W-a-v-e-l-e-n-g-t-h- -&-a-m-p-;- -p-e-r-i-o-d-<-/-h-3->-
-- - - - - - -<-d-i-v- -c-l-a-s-s-=-"-g-r-i-d-2-"->-
-- - - - - - - - -<-l-a-b-e-l->-F-r-e-q-u-e-n-c-y- -(-H-z-)-
-- - - - - - - - - - -<-i-n-p-u-t- -t-y-p-e-=-"-n-u-m-b-e-r-"- -s-t-e-p-=-"-1-"- -v---m-o-d-e-l-.-n-u-m-b-e-r-=-"-f-r-e-q-"- -/->-
-- - - - - - - - -<-/-l-a-b-e-l->-
-- - - - - - - - -<-d-i-v- -c-l-a-s-s-=-"-r-e-a-d-o-u-t-"->-
-- - - - - - - - - - -λ- -=- -<-s-t-r-o-n-g->-{-{- -f-m-t-(-l-a-m-b-d-a- -*- -1-0-0-,- -2-)- -}-}- -c-m-<-/-s-t-r-o-n-g->-
-- - - - - - - - - - -&-n-b-s-p-;-·-&-n-b-s-p-;-
-- - - - - - - - - - -T- -=- -<-s-t-r-o-n-g->-{-{- -f-m-t-(-p-e-r-i-o-d-M-s-,- -3-)- -}-}- -m-s-<-/-s-t-r-o-n-g->-
-- - - - - - - - -<-/-d-i-v->-
-- - - - - - -<-/-d-i-v->-
-- - - - -<-/-d-i-v->-
--
-- - - - -<-d-i-v- -c-l-a-s-s-=-"-c-a-r-d-"->-
-- - - - - - -<-h-3->-D-i-s-t-a-n-c-e- -↔- -d-e-l-a-y-<-/-h-3->-
-- - - - - - -<-d-i-v- -c-l-a-s-s-=-"-g-r-i-d-2-"->-
-- - - - - - - - -<-l-a-b-e-l->-D-i-s-t-a-n-c-e- -(-m-)-
-- - - - - - - - - - -<-i-n-p-u-t- -t-y-p-e-=-"-n-u-m-b-e-r-"- -s-t-e-p-=-"-0-.-1-"- -v---m-o-d-e-l-.-n-u-m-b-e-r-=-"-d-i-s-t-M-"- -/->-
-- - - - - - - - -<-/-l-a-b-e-l->-
-- - - - - - - - -<-d-i-v- -c-l-a-s-s-=-"-r-e-a-d-o-u-t-"->-d-e-l-a-y- -=- -<-s-t-r-o-n-g->-{-{- -f-m-t-(-d-e-l-a-y-M-s-,- -2-)- -}-}- -m-s-<-/-s-t-r-o-n-g->-<-/-d-i-v->-
-- - - - - - -<-/-d-i-v->-
-- - - - - - -<-d-i-v- -c-l-a-s-s-=-"-g-r-i-d-2-"->-
-- - - - - - - - -<-l-a-b-e-l->-D-e-l-a-y- -(-m-s-)-
-- - - - - - - - - - -<-i-n-p-u-t- -t-y-p-e-=-"-n-u-m-b-e-r-"- -s-t-e-p-=-"-0-.-1-"- -v---m-o-d-e-l-.-n-u-m-b-e-r-=-"-d-e-l-a-y-I-n-p-u-t-"- -/->-
-- - - - - - - - -<-/-l-a-b-e-l->-
-- - - - - - - - -<-d-i-v- -c-l-a-s-s-=-"-r-e-a-d-o-u-t-"->-d-i-s-t-a-n-c-e- -=- -<-s-t-r-o-n-g->-{-{- -f-m-t-(-d-i-s-t-F-r-o-m-D-e-l-a-y-,- -3-)- -}-}- -m-<-/-s-t-r-o-n-g->-<-/-d-i-v->-
-- - - - - - -<-/-d-i-v->-
-- - - - -<-/-d-i-v->-
--
-- - - - -<-d-i-v- -c-l-a-s-s-=-"-c-a-r-d-"->-
-- - - - - - -<-h-3->-P-h-a-s-e- -↔- -d-e-l-a-y-<-/-h-3->-
-- - - - - - -<-d-i-v- -c-l-a-s-s-=-"-g-r-i-d-3-"->-
-- - - - - - - - -<-l-a-b-e-l->-F-r-e-q-u-e-n-c-y- -(-H-z-)-
-- - - - - - - - - - -<-i-n-p-u-t- -t-y-p-e-=-"-n-u-m-b-e-r-"- -s-t-e-p-=-"-1-"- -v---m-o-d-e-l-.-n-u-m-b-e-r-=-"-p-h-a-s-e-F-r-e-q-"- -/->-
-- - - - - - - - -<-/-l-a-b-e-l->-
-- - - - - - - - -<-l-a-b-e-l->-D-e-l-a-y- -(-m-s-)-
-- - - - - - - - - - -<-i-n-p-u-t- -t-y-p-e-=-"-n-u-m-b-e-r-"- -s-t-e-p-=-"-0-.-1-"- -v---m-o-d-e-l-.-n-u-m-b-e-r-=-"-p-h-a-s-e-D-e-l-a-y-M-s-"- -/->-
-- - - - - - - - -<-/-l-a-b-e-l->-
-- - - - - - - - -<-d-i-v- -c-l-a-s-s-=-"-r-e-a-d-o-u-t-"->-p-h-a-s-e- -=- -<-s-t-r-o-n-g->-{-{- -f-m-t-(-p-h-a-s-e-D-e-g-,- -1-)- -}-}-°-<-/-s-t-r-o-n-g->-<-/-d-i-v->-
-- - - - - - -<-/-d-i-v->-
-- - - - - - -<-d-i-v- -c-l-a-s-s-=-"-g-r-i-d-3-"->-
-- - - - - - - - -<-l-a-b-e-l->-F-r-e-q-u-e-n-c-y- -(-H-z-)-
-- - - - - - - - - - -<-i-n-p-u-t- -t-y-p-e-=-"-n-u-m-b-e-r-"- -s-t-e-p-=-"-1-"- -v---m-o-d-e-l-.-n-u-m-b-e-r-=-"-p-h-a-s-e-F-r-e-q-"- -/->-
-- - - - - - - - -<-/-l-a-b-e-l->-
-- - - - - - - - -<-l-a-b-e-l->-P-h-a-s-e- -(-°-)-
-- - - - - - - - - - -<-i-n-p-u-t- -t-y-p-e-=-"-n-u-m-b-e-r-"- -s-t-e-p-=-"-5-"- -v---m-o-d-e-l-.-n-u-m-b-e-r-=-"-p-h-a-s-e-I-n-p-u-t-D-e-g-"- -/->-
-- - - - - - - - -<-/-l-a-b-e-l->-
-- - - - - - - - -<-d-i-v- -c-l-a-s-s-=-"-r-e-a-d-o-u-t-"->-d-e-l-a-y- -=- -<-s-t-r-o-n-g->-{-{- -f-m-t-(-d-e-l-a-y-F-r-o-m-P-h-a-s-e-M-s-,- -3-)- -}-}- -m-s-<-/-s-t-r-o-n-g->-<-/-d-i-v->-
-- - - - - - -<-/-d-i-v->-
-- - - - - - -<-p- -c-l-a-s-s-=-"-m-u-t-e-d-"->-S-i-g-n- -c-o-n-v-e-n-t-i-o-n-:- -a- -p-o-s-i-t-i-v-e- -d-e-l-a-y- -p-r-o-d-u-c-e-s- -a- -n-e-g-a-t-i-v-e- -(-l-a-g-g-i-n-g-)- -p-h-a-s-e- -s-h-i-f-t-.-<-/-p->-
-- - - - -<-/-d-i-v->-
--
-- - - - -<-d-i-v- -c-l-a-s-s-=-"-c-a-r-d-"->-
-- - - - - - -<-h-3->-A-i-r- -a-b-s-o-r-p-t-i-o-n- -(-I-S-O- -9-6-1-3---1-)-<-/-h-3->-
-- - - - - - -<-d-i-v- -c-l-a-s-s-=-"-g-r-i-d-2-"->-
-- - - - - - - - -<-l-a-b-e-l->-P-r-o-p-a-g-a-t-i-o-n- -d-i-s-t-a-n-c-e- -(-m-)-
-- - - - - - - - - - -<-i-n-p-u-t- -t-y-p-e-=-"-n-u-m-b-e-r-"- -s-t-e-p-=-"-1-"- -v---m-o-d-e-l-.-n-u-m-b-e-r-=-"-a-b-s-o-r-b-D-i-s-t-"- -/->-
-- - - - - - - - -<-/-l-a-b-e-l->-
-- - - - - - - - -<-d-i-v- -c-l-a-s-s-=-"-r-e-a-d-o-u-t- -m-u-t-e-d-"->-A-t- -{-{- -T-_-C- -}-}- -°-C-,- -{-{- -R-H- -}-}- -%- -R-H-,- -{-{- -(-p-_-a-t-m-/-1-0-0-0-)-.-t-o-F-i-x-e-d-(-1-)- -}-}- -k-P-a-.-<-/-d-i-v->-
-- - - - - - -<-/-d-i-v->-
-- - - - - - -<-t-a-b-l-e- -c-l-a-s-s-=-"-a-b-s-o-r-b-"->-
-- - - - - - - - -<-t-h-e-a-d->-
-- - - - - - - - - - -<-t-r->-<-t-h->-f- -(-H-z-)-<-/-t-h->-<-t-h->-α- -(-d-B-/-m-)-<-/-t-h->-<-t-h->-L-o-s-s- -a-t- -{-{- -a-b-s-o-r-b-D-i-s-t- -}-}- -m- -(-d-B-)-<-/-t-h->-<-/-t-r->-
-- - - - - - - - -<-/-t-h-e-a-d->-
-- - - - - - - - -<-t-b-o-d-y->-
-- - - - - - - - - - -<-t-r- -v---f-o-r-=-"-r- -i-n- -a-b-s-o-r-b-R-o-w-s-"- -:-k-e-y-=-"-r-.-f-"->-
-- - - - - - - - - - - - -<-t-d->-{-{- -r-.-f- -}-}-<-/-t-d->-
-- - - - - - - - - - - - -<-t-d->-{-{- -f-m-t-(-r-.-a-l-p-h-a-,- -4-)- -}-}-<-/-t-d->-
-- - - - - - - - - - - - -<-t-d->-{-{- -f-m-t-(-r-.-d-B-,- -2-)- -}-}-<-/-t-d->-
-- - - - - - - - - - -<-/-t-r->-
-- - - - - - - - -<-/-t-b-o-d-y->-
-- - - - - - -<-/-t-a-b-l-e->-
-- - - - -<-/-d-i-v->-
--
-- - - - -<-d-i-v- -c-l-a-s-s-=-"-c-a-r-d-"->-
-- - - - - - -<-h-3->-F-l-o-o-r- -b-o-u-n-c-e- -(-c-o-m-b- -f-i-l-t-e-r-)-<-/-h-3->-
-- - - - - - -<-d-i-v- -c-l-a-s-s-=-"-g-r-i-d-4-"->-
-- - - - - - - - -<-l-a-b-e-l->-H-o-r-i-z-o-n-t-a-l- -d-i-s-t-a-n-c-e- -(-m-)-
-- - - - - - - - - - -<-i-n-p-u-t- -t-y-p-e-=-"-n-u-m-b-e-r-"- -s-t-e-p-=-"-0-.-1-"- -v---m-o-d-e-l-.-n-u-m-b-e-r-=-"-f-b-D-i-s-t-"- -/->-
-- - - - - - - - -<-/-l-a-b-e-l->-
-- - - - - - - - -<-l-a-b-e-l->-S-o-u-r-c-e- -h-e-i-g-h-t- -(-m-)-
-- - - - - - - - - - -<-i-n-p-u-t- -t-y-p-e-=-"-n-u-m-b-e-r-"- -s-t-e-p-=-"-0-.-1-"- -v---m-o-d-e-l-.-n-u-m-b-e-r-=-"-f-b-S-r-c-H-"- -/->-
-- - - - - - - - -<-/-l-a-b-e-l->-
-- - - - - - - - -<-l-a-b-e-l->-M-i-c- -h-e-i-g-h-t- -(-m-)-
-- - - - - - - - - - -<-i-n-p-u-t- -t-y-p-e-=-"-n-u-m-b-e-r-"- -s-t-e-p-=-"-0-.-1-"- -v---m-o-d-e-l-.-n-u-m-b-e-r-=-"-f-b-M-i-c-H-"- -/->-
-- - - - - - - - -<-/-l-a-b-e-l->-
-- - - - - - - - -<-l-a-b-e-l->-R-e-f-l-e-c-t-i-o-n- -c-o-e-f-f-.-
-- - - - - - - - - - -<-i-n-p-u-t- -t-y-p-e-=-"-n-u-m-b-e-r-"- -s-t-e-p-=-"-0-.-0-5-"- -m-i-n-=-"-0-"- -m-a-x-=-"-1-"- -v---m-o-d-e-l-.-n-u-m-b-e-r-=-"-f-b-R-e-f-l-e-c-t-"- -/->-
-- - - - - - - - -<-/-l-a-b-e-l->-
-- - - - - - -<-/-d-i-v->-
-- - - - - - -<-s-v-g- -c-l-a-s-s-=-"-f-b---p-l-o-t-"- -:-v-i-e-w-B-o-x-=-"-f-b-V-i-e-w-B-o-x-"- -p-r-e-s-e-r-v-e-A-s-p-e-c-t-R-a-t-i-o-=-"-n-o-n-e-"->-
-- - - - - - - - -<-l-i-n-e- -x-1-=-"-0-"- -y-1-=-"-0-"- -x-2-=-"-6-0-0-"- -y-2-=-"-0-"- -s-t-r-o-k-e-=-"-v-a-r-(-----b-o-r-d-e-r-)-"- -s-t-r-o-k-e---w-i-d-t-h-=-"-0-.-4-"- -/->-
-- - - - - - - - -<-l-i-n-e- -x-1-=-"-0-"- -y-1-=-"---6-"- -x-2-=-"-6-0-0-"- -y-2-=-"---6-"- -s-t-r-o-k-e-=-"-v-a-r-(-----b-o-r-d-e-r-)-"- -s-t-r-o-k-e---d-a-s-h-a-r-r-a-y-=-"-2-,-3-"- -s-t-r-o-k-e---w-i-d-t-h-=-"-0-.-3-"- -/->-
-- - - - - - - - -<-l-i-n-e- -x-1-=-"-0-"- -y-1-=-"-6-"- -x-2-=-"-6-0-0-"- -y-2-=-"-6-"- -s-t-r-o-k-e-=-"-v-a-r-(-----b-o-r-d-e-r-)-"- -s-t-r-o-k-e---d-a-s-h-a-r-r-a-y-=-"-2-,-3-"- -s-t-r-o-k-e---w-i-d-t-h-=-"-0-.-3-"- -/->-
-- - - - - - - - -<-p-a-t-h- -:-d-=-"-f-b-P-a-t-h-"- -f-i-l-l-=-"-n-o-n-e-"- -s-t-r-o-k-e-=-"-v-a-r-(-----a-c-c-e-n-t-)-"- -s-t-r-o-k-e---w-i-d-t-h-=-"-1-.-2-"- -/->-
-- - - - - - -<-/-s-v-g->-
-- - - - - - -<-p- -c-l-a-s-s-=-"-m-u-t-e-d-"->-Y- -a-x-i-s-:- -±-2-4- -d-B- -d-e-v-i-a-t-i-o-n- -f-r-o-m- -d-i-r-e-c-t---o-n-l-y- -S-P-L-.- -X- -a-x-i-s-:- -5-0- -H-z- -–- -2-0- -k-H-z- -(-l-o-g-)-.-<-/-p->-
-- - - - -<-/-d-i-v->-
-- - -<-/-d-i-v->-
--<-/-t-e-m-p-l-a-t-e->-
--
--<-s-t-y-l-e- -s-c-o-p-e-d->-
--.-c-a-l-c-s- -{- -d-i-s-p-l-a-y-:- -f-l-e-x-;- -f-l-e-x---d-i-r-e-c-t-i-o-n-:- -c-o-l-u-m-n-;- -g-a-p-:- -1-4-p-x-;- -m-a-x---w-i-d-t-h-:- -9-6-0-p-x-;- -m-a-r-g-i-n-:- -0- -a-u-t-o-;- -}-
--.-c-a-r-d- -{- -p-a-d-d-i-n-g-:- -1-4-p-x- -1-6-p-x-;- -}-
--.-c-r-e-d-i-t- -{- -b-o-r-d-e-r---l-e-f-t-:- -3-p-x- -s-o-l-i-d- -v-a-r-(-----a-c-c-e-n-t-)-;- -}-
--.-c-r-e-d-i-t- -a- -{- -c-o-l-o-r-:- -v-a-r-(-----a-c-c-e-n-t-)-;- -}-
--h-3- -{- -m-a-r-g-i-n-:- -0- -0- -1-0-p-x- -0-;- -c-o-l-o-r-:- -v-a-r-(-----a-c-c-e-n-t-)-;- -}-
--.-g-r-i-d-2- -{- -d-i-s-p-l-a-y-:- -g-r-i-d-;- -g-r-i-d---t-e-m-p-l-a-t-e---c-o-l-u-m-n-s-:- -1-f-r- -1-f-r-;- -g-a-p-:- -1-0-p-x-;- -a-l-i-g-n---i-t-e-m-s-:- -e-n-d-;- -m-a-r-g-i-n---b-o-t-t-o-m-:- -8-p-x-;- -}-
--.-g-r-i-d-3- -{- -d-i-s-p-l-a-y-:- -g-r-i-d-;- -g-r-i-d---t-e-m-p-l-a-t-e---c-o-l-u-m-n-s-:- -1-f-r- -1-f-r- -1-f-r-;- -g-a-p-:- -1-0-p-x-;- -a-l-i-g-n---i-t-e-m-s-:- -e-n-d-;- -m-a-r-g-i-n---b-o-t-t-o-m-:- -8-p-x-;- -}-
--.-g-r-i-d-4- -{- -d-i-s-p-l-a-y-:- -g-r-i-d-;- -g-r-i-d---t-e-m-p-l-a-t-e---c-o-l-u-m-n-s-:- -r-e-p-e-a-t-(-4-,- -1-f-r-)-;- -g-a-p-:- -1-0-p-x-;- -a-l-i-g-n---i-t-e-m-s-:- -e-n-d-;- -m-a-r-g-i-n---b-o-t-t-o-m-:- -1-0-p-x-;- -}-
--l-a-b-e-l- -{- -d-i-s-p-l-a-y-:- -f-l-e-x-;- -f-l-e-x---d-i-r-e-c-t-i-o-n-:- -c-o-l-u-m-n-;- -f-o-n-t---s-i-z-e-:- -1-2-p-x-;- -c-o-l-o-r-:- -v-a-r-(-----f-g---d-i-m-)-;- -g-a-p-:- -4-p-x-;- -}-
--i-n-p-u-t- -{- -p-a-d-d-i-n-g-:- -5-p-x- -8-p-x-;- -}-
--.-r-e-a-d-o-u-t- -{- -p-a-d-d-i-n-g-:- -8-p-x- -1-0-p-x-;- -b-a-c-k-g-r-o-u-n-d-:- -v-a-r-(-----b-g---2-)-;- -b-o-r-d-e-r---r-a-d-i-u-s-:- -v-a-r-(-----r-a-d-i-u-s---s-m-)-;- -f-o-n-t---s-i-z-e-:- -1-3-p-x-;- -}-
--.-r-e-a-d-o-u-t- -s-t-r-o-n-g- -{- -c-o-l-o-r-:- -v-a-r-(-----f-g-)-;- -}-
--.-m-u-t-e-d- -{- -c-o-l-o-r-:- -v-a-r-(-----f-g---d-i-m-)-;- -f-o-n-t---s-i-z-e-:- -1-2-p-x-;- -m-a-r-g-i-n-:- -4-p-x- -0- -0- -0-;- -}-
--t-a-b-l-e-.-a-b-s-o-r-b- -{- -w-i-d-t-h-:- -1-0-0-%-;- -b-o-r-d-e-r---c-o-l-l-a-p-s-e-:- -c-o-l-l-a-p-s-e-;- -m-a-r-g-i-n---t-o-p-:- -6-p-x-;- -f-o-n-t---s-i-z-e-:- -1-3-p-x-;- -}-
--t-a-b-l-e-.-a-b-s-o-r-b- -t-h-,- -t-a-b-l-e-.-a-b-s-o-r-b- -t-d- -{- -t-e-x-t---a-l-i-g-n-:- -r-i-g-h-t-;- -p-a-d-d-i-n-g-:- -4-p-x- -8-p-x-;- -b-o-r-d-e-r---b-o-t-t-o-m-:- -1-p-x- -s-o-l-i-d- -v-a-r-(-----b-o-r-d-e-r-)-;- -}-
--t-a-b-l-e-.-a-b-s-o-r-b- -t-h-:-f-i-r-s-t---c-h-i-l-d-,- -t-a-b-l-e-.-a-b-s-o-r-b- -t-d-:-f-i-r-s-t---c-h-i-l-d- -{- -t-e-x-t---a-l-i-g-n-:- -l-e-f-t-;- -}-
--.-f-b---p-l-o-t- -{- -w-i-d-t-h-:- -1-0-0-%-;- -h-e-i-g-h-t-:- -1-6-0-p-x-;- -b-a-c-k-g-r-o-u-n-d-:- -v-a-r-(-----b-g---2-)-;- -b-o-r-d-e-r---r-a-d-i-u-s-:- -v-a-r-(-----r-a-d-i-u-s---s-m-)-;- -}-
--
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import {
+  speedOfSound, wavelength, period,
+  delayFromDistance, distanceFromDelay,
+  phaseFromDelay, delayFromPhase,
+  airAbsorption, airAbsorptionDb,
+  floorBounce, logFrequencyGrid,
+} from '@/core/mvv'
+
+// Environment controls shared by several calculators.
+const T_C = ref(20)
+const RH = ref(50)
+const p_atm = ref(101325)
+const c = computed(() => speedOfSound(T_C.value, RH.value, p_atm.value))
+
+// Wavelength / period.
+const freq = ref(1000)
+const lambda = computed(() => wavelength(freq.value, c.value))
+const periodMs = computed(() => period(freq.value) * 1000)
+
+// Distance ↔ delay.
+const distM = ref(10)
+const delayMs = computed(() => delayFromDistance(distM.value, c.value) * 1000)
+const delayInput = ref(10)
+const distFromDelay = computed(() => distanceFromDelay(delayInput.value / 1000, c.value))
+
+// Phase ↔ delay.
+const phaseFreq = ref(1000)
+const phaseDelayMs = ref(1)
+const phaseDeg = computed(() => phaseFromDelay(phaseDelayMs.value / 1000, phaseFreq.value))
+const phaseInputDeg = ref(180)
+const delayFromPhaseMs = computed(() => delayFromPhase(phaseInputDeg.value, phaseFreq.value) * 1000)
+
+// Air absorption.
+const absorbDist = ref(30)
+const absorbBands = [125, 250, 500, 1000, 2000, 4000, 8000, 16000]
+const absorbRows = computed(() =>
+  absorbBands.map((f) => ({
+    f,
+    alpha: airAbsorption(f, T_C.value, RH.value, p_atm.value),
+    dB: airAbsorptionDb(f, absorbDist.value, T_C.value, RH.value, p_atm.value),
+  })),
+)
+
+// Floor bounce.
+const fbDist = ref(4)
+const fbSrcH = ref(1.2)
+const fbMicH = ref(1.2)
+const fbReflect = ref(0.8)
+const fbGrid = logFrequencyGrid(50, 20000, 120)
+const fbSamples = computed(() =>
+  fbGrid.map((f) => ({
+    f,
+    db: floorBounce(f, fbDist.value, fbSrcH.value, fbMicH.value, fbReflect.value, c.value),
+  })),
+)
+const fbViewBox = '0 -24 600 48'
+const fbPath = computed(() => {
+  const fMin = Math.log10(fbGrid[0]!)
+  const fMax = Math.log10(fbGrid[fbGrid.length - 1]!)
+  const xOf = (f: number) => ((Math.log10(f) - fMin) / (fMax - fMin)) * 600
+  const yOf = (db: number) => -db // 1 px per dB, centre at 0
+  return fbSamples.value
+    .map((s, i) => `${i === 0 ? 'M' : 'L'}${xOf(s.f).toFixed(1)},${yOf(s.db).toFixed(1)}`)
+    .join(' ')
+})
+
+function fmt(n: number, digits = 2): string {
+  if (!Number.isFinite(n)) return '–'
+  return n.toFixed(digits)
+}
+
+</script>
+
+<template>
+  <div class="calcs">
+    <div class="card credit">
+      <h2>Acoustics calculators</h2>
+      <p>
+        These calculators are based on the work of
+        <a href="https://www.merlijnvanveen.nl/en/calculators" target="_blank" rel="noopener">Merlijn van Veen</a>.
+        The original Excel spreadsheets are freely available on his website; this
+        panel re-implements the same formulae (Cramer 1993 speed of sound,
+        ISO 9613-1 air absorption, image-source comb filtering, etc.) in
+        TypeScript so they can feed the design tool and be unit-tested. Credit
+        for pulling these formulae together into accessible calculators belongs
+        to Merlijn van Veen.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>Environment</h3>
+      <div class="grid3">
+        <label>Temperature (°C)
+          <input type="number" step="0.5" v-model.number="T_C" />
+        </label>
+        <label>Relative humidity (%)
+          <input type="number" step="1" min="0" max="100" v-model.number="RH" />
+        </label>
+        <label>Atmospheric pressure (Pa)
+          <input type="number" step="100" v-model.number="p_atm" />
+        </label>
+      </div>
+      <p class="readout">
+        Speed of sound <strong>c = {{ fmt(c, 2) }} m/s</strong>
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>Wavelength &amp; period</h3>
+      <div class="grid2">
+        <label>Frequency (Hz)
+          <input type="number" step="1" v-model.number="freq" />
+        </label>
+        <div class="readout">
+          λ = <strong>{{ fmt(lambda * 100, 2) }} cm</strong>
+          &nbsp;·&nbsp;
+          T = <strong>{{ fmt(periodMs, 3) }} ms</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Distance ↔ delay</h3>
+      <div class="grid2">
+        <label>Distance (m)
+          <input type="number" step="0.1" v-model.number="distM" />
+        </label>
+        <div class="readout">delay = <strong>{{ fmt(delayMs, 2) }} ms</strong></div>
+      </div>
+      <div class="grid2">
+        <label>Delay (ms)
+          <input type="number" step="0.1" v-model.number="delayInput" />
+        </label>
+        <div class="readout">distance = <strong>{{ fmt(distFromDelay, 3) }} m</strong></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Phase ↔ delay</h3>
+      <div class="grid3">
+        <label>Frequency (Hz)
+          <input type="number" step="1" v-model.number="phaseFreq" />
+        </label>
+        <label>Delay (ms)
+          <input type="number" step="0.1" v-model.number="phaseDelayMs" />
+        </label>
+        <div class="readout">phase = <strong>{{ fmt(phaseDeg, 1) }}°</strong></div>
+      </div>
+      <div class="grid3">
+        <label>Frequency (Hz)
+          <input type="number" step="1" v-model.number="phaseFreq" />
+        </label>
+        <label>Phase (°)
+          <input type="number" step="5" v-model.number="phaseInputDeg" />
+        </label>
+        <div class="readout">delay = <strong>{{ fmt(delayFromPhaseMs, 3) }} ms</strong></div>
+      </div>
+      <p class="muted">Sign convention: a positive delay produces a negative (lagging) phase shift.</p>
+    </div>
+
+    <div class="card">
+      <h3>Air absorption (ISO 9613-1)</h3>
+      <div class="grid2">
+        <label>Propagation distance (m)
+          <input type="number" step="1" v-model.number="absorbDist" />
+        </label>
+        <div class="readout muted">At {{ T_C }} °C, {{ RH }} % RH, {{ (p_atm/1000).toFixed(1) }} kPa.</div>
+      </div>
+      <table class="absorb">
+        <thead>
+          <tr><th>f (Hz)</th><th>α (dB/m)</th><th>Loss at {{ absorbDist }} m (dB)</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="r in absorbRows" :key="r.f">
+            <td>{{ r.f }}</td>
+            <td>{{ fmt(r.alpha, 4) }}</td>
+            <td>{{ fmt(r.dB, 2) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Floor bounce (comb filter)</h3>
+      <div class="grid4">
+        <label>Horizontal distance (m)
+          <input type="number" step="0.1" v-model.number="fbDist" />
+        </label>
+        <label>Source height (m)
+          <input type="number" step="0.1" v-model.number="fbSrcH" />
+        </label>
+        <label>Mic height (m)
+          <input type="number" step="0.1" v-model.number="fbMicH" />
+        </label>
+        <label>Reflection coeff.
+          <input type="number" step="0.05" min="0" max="1" v-model.number="fbReflect" />
+        </label>
+      </div>
+      <svg class="fb-plot" :viewBox="fbViewBox" preserveAspectRatio="none">
+        <line x1="0" y1="0" x2="600" y2="0" stroke="var(--border)" stroke-width="0.4" />
+        <line x1="0" y1="-6" x2="600" y2="-6" stroke="var(--border)" stroke-dasharray="2,3" stroke-width="0.3" />
+        <line x1="0" y1="6" x2="600" y2="6" stroke="var(--border)" stroke-dasharray="2,3" stroke-width="0.3" />
+        <path :d="fbPath" fill="none" stroke="var(--accent)" stroke-width="1.2" />
+      </svg>
+      <p class="muted">Y axis: ±24 dB deviation from direct-only SPL. X axis: 50 Hz – 20 kHz (log).</p>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.calcs { display: flex; flex-direction: column; gap: 14px; max-width: 960px; margin: 0 auto; }
+.card { padding: 14px 16px; }
+.credit { border-left: 3px solid var(--accent); }
+.credit a { color: var(--accent); }
+h3 { margin: 0 0 10px 0; color: var(--accent); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; margin-bottom: 8px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end; margin-bottom: 8px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: end; margin-bottom: 10px; }
+label { display: flex; flex-direction: column; font-size: 12px; color: var(--fg-dim); gap: 4px; }
+input { padding: 5px 8px; }
+.readout { padding: 8px 10px; background: var(--bg-2); border-radius: var(--radius-sm); font-size: 13px; }
+.readout strong { color: var(--fg); }
+.muted { color: var(--fg-dim); font-size: 12px; margin: 4px 0 0 0; }
+table.absorb { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 13px; }
+table.absorb th, table.absorb td { text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+table.absorb th:first-child, table.absorb td:first-child { text-align: left; }
+.fb-plot { width: 100%; height: 160px; background: var(--bg-2); border-radius: var(--radius-sm); }
+</style>

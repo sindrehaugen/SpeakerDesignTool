@@ -29,6 +29,11 @@ Everything is pure functions — the UI reads a single reactive `analysis = comp
 3. Run dev window: `npm run tauri dev`.
 4. Build installer: `npm run tauri build`.
 
+**Desktop (macOS):**
+
+macOS installers (`.dmg` and `.app`) are automatically built via GitHub Actions when a new version tag is pushed. Download the `.dmg` from the [Releases](https://github.com/sindrehaugen/SpeakerDesignTool/releases) page.
+> **Note on "Unidentified Developer":** Since the app is currently unsigned, macOS Gatekeeper will show a warning when you first open it. To bypass this, **Right-click** (or Control-click) the app icon and select **"Open"**.
+
 **Web Preview (Dev mode only):**
 
 ```bash

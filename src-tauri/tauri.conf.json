@@ -28,7 +28,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["msi", "nsis"],
+    "targets": "all",
     "category": "Productivity",
     "shortDescription": "Speaker installation design tool with spectral physics engine.",
     "longDescription": "Low-Z and 100V/70V loudspeaker design with 3D room view, SPL coverage heatmap, acoustics calculators (Cramer 1993 / ISO 9613-1), and a subwoofer-array beamforming designer.",

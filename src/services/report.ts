@@ -97,5 +97,15 @@ export async function generatePdfReport(p: ReportPayload): Promise<void> {
     headStyles: { fillColor: [63, 63, 70] },
   })
 
-  doc.save(`${p.project.name}_Report.pdf`)
+  try {
+    const { downloadDir, join } = await import('@tauri-apps/api/path')
+    const { writeFile } = await import('@tauri-apps/plugin-fs')
+    const dlPath = await downloadDir()
+    const filePath = await join(dlPath, `${p.project.name || 'Project'}_Report.pdf`)
+    await writeFile(filePath, new Uint8Array(doc.output('arraybuffer')))
+    console.log(`Saved PDF to ${filePath}`)
+  } catch (err) {
+    console.warn('Tauri FS failed or not available, falling back to browser download:', err)
+    doc.save(`${p.project.name || 'Project'}_Report.pdf`)
+  }
 }
