@@ -1,6 +1,6 @@
 {
   "name": "speaker-design-tool",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "private": true,
   "type": "module",
   "description": "Advanced speaker installation design tool with spectral physics engine, 3D room simulation, and reactive architecture.",
