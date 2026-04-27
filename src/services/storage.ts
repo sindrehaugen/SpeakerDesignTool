@@ -25,6 +25,7 @@ export const STORAGE_KEYS = [
   'sdt_database_v4',
   'sdt_user_prefs_v4',
   'sdt_room_v4',
+  'sdt_subarray_v4',
 ] as const
 export type StorageKey = (typeof STORAGE_KEYS)[number]
 

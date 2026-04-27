@@ -27,19 +27,9 @@
  *  peak are we hitting?" reading.
  */
 
-export interface SubUnit {
-  /** Forward (+) / behind (−) position in metres. */
-  x: number
-  /** Right (+) / left (−) position in metres. */
-  y: number
-  /** Applied delay in seconds. Positive = arrives later than an un-delayed source. */
-  delay: number
-  /** Relative amplifier polarity. Use +1 or −1. */
-  polarity: 1 | -1
-  /** Linear gain (default 1.0). Combines multiplicatively with polarity. */
-  gain?: number
-  label?: string
-}
+// SubUnit is now a domain type — re-export for backward compatibility.
+export type { SubUnit } from '@/types/domain'
+import type { SubUnit } from '@/types/domain'
 
 /** Complex pressure phasor contribution of one array at frequency f, angle θ (radians). */
 export function pressurePhasor(

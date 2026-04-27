@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { SignalNode } from '@/types/domain'
 
-export type ViewName = 'calculator' | 'database' | 'room' | 'calculators' | 'reports' | 'reference'
+export type ViewName = 'calculator' | 'database' | 'room' | 'calculators' | 'subarray' | 'reports' | 'reference'
 
 export const useUiStore = defineStore('ui', () => {
   const currentView = ref<ViewName>('calculator')

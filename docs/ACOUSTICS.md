@@ -1,6 +1,6 @@
 # Acoustics calculators (`src/core/mvv.ts`)
 
-Pure functions implementing the acoustics formulae shown on the **Acoustics** tab (`src/views/CalculatorsView.vue`). All pedagogy and worked examples are from **Merlijn van Veen**'s freely-published Excel calculators — https://www.merlijnvanveen.nl/en/calculators. This module re-implements the same formulae in TypeScript so they can drive the UI, feed the rest of the design tool, and be unit-tested.
+Pure functions implementing the acoustics formulae shown on the **Acoustics** tab (`src/views/CalculatorsView.vue`). All pedagogy and worked examples are from **Merlijn van Veen**'s freely-published Excel calculators — https://www.merlijnvanveen.nl/en/calculators. This module re-implements the same formulae in TypeScript so they can drive the UI, feed the rest of the design tool, and be unit-tested. Core logic is pure; UI state is managed in the view.
 
 Unit conventions: SI everywhere. Distances in metres, frequencies in hertz, temperatures in °C (except where noted), pressures in pascals, delays in seconds, angles in degrees on the UI and radians internally.
 

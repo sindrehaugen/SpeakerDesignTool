@@ -1,6 +1,6 @@
 # Subwoofer array designer (`src/core/subArray.ts` + UI)
 
-Far-field polar response, near-field 2D pressure map, and 3D cabinet layout for multi-sub configurations. The core physics lives in `src/core/subArray.ts` (pure functions, Vitest-covered); the three visualisations live in `src/views/CalculatorsView.vue` under the **Subwoofer array** card.
+Far-field polar response, near-field 2D pressure map, and 3D cabinet layout for multi-sub configurations. The core physics lives in `src/core/subArray.ts` (pure functions, Vitest-covered); the persistent state and multiple array configurations live in `src/stores/subArray.ts`, and the UI is located in `src/views/SubArrayView.vue`.
 
 The pedagogy — which presets to ship, what invariants to verify, which worked examples to lean on — comes from **Merlijn van Veen**'s freely-published sub-array articles and calculators (https://www.merlijnvanveen.nl/en/calculators). This module re-derives the equations from the standard far-field pressure-sum model and implements them in TypeScript so they can drive the live UI and be unit-tested.
 
@@ -54,6 +54,10 @@ interface SubUnit {
   delay: number     // applied electronic delay, seconds
   polarity: 1 | -1  // amplifier polarity
   gain?: number     // linear gain, default 1.0
+  speakerId?: string // Link to Equipment Database
+  boxW?: number      // Physical cabinet width, metres
+  boxH?: number      // Physical cabinet height, metres
+  boxD?: number      // Physical cabinet depth, metres
   label?: string
 }
 

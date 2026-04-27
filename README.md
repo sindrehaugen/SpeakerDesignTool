@@ -22,24 +22,22 @@ Everything is pure functions — the UI reads a single reactive `analysis = comp
 
 ## Running it
 
-**Recommended (desktop):**
+**Desktop (Windows):**
+
+1. Install [Rust](https://rustup.rs/) (or run `winget install Rustlang.Rustup`).
+2. Install dependencies: `npm install`.
+3. Run dev window: `npm run tauri dev`.
+4. Build installer: `npm run tauri build`.
+
+**Web Preview (Dev mode only):**
 
 ```bash
-npm install
-npm run tauri:dev   # hot-reload native window (Vite + Rust shell)
-npm run tauri:build # production .exe + installers
-```
-
-**Browser fallback (development only):**
-
-```bash
-npm run dev        # http://localhost:5173 — uses localStorage
+npm run dev        # http://localhost:5173 — uses localStorage fallback
 npm run test       # Vitest — 46 unit tests across 7 files
-npm run typecheck  # vue-tsc strict
-npm run build      # Vite production bundle in dist/
+npm run typecheck  # vue-tsc strict check
 ```
 
-Node 18+ is required. See [Desktop packaging (Tauri)](#desktop-packaging-tauri) for Rust prerequisites.
+Data persistence on desktop lives in `%APPDATA%\com.speakerdesigntool.app\` via standard JSON files.
 
 ---
 
@@ -51,7 +49,7 @@ Hierarchical signal-chain builder with live per-node voltage drop, load Ω, HF l
 
 ### Database tab
 
-Edit / import / export Speakers, Cables, Amplifiers (CSV + JSON). Defaults load from `src/data/` on first run; edits persist to native JSON files in `%APPDATA%\com.speakerdesigntool.app\` (desktop) or `localStorage` (browser dev mode).
+Edit / import / export Speakers, Cables, Amplifiers (CSV + JSON). Defaults load from `src/data/` on first run; edits persist to native JSON files in `%APPDATA%\com.speakerdesigntool.app\` on desktop, or `localStorage` in browser dev mode.
 
 ### Room & Coverage tab
 

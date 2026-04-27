@@ -12,6 +12,7 @@ const tabs: Array<{ id: ViewName; label: string }> = [
   { id: 'database',   label: 'Database' },
   { id: 'room',       label: 'Room & Coverage' },
   { id: 'calculators',label: 'Acoustics' },
+  { id: 'subarray',   label: 'Sub-Array' },
   { id: 'reports',    label: 'Reports' },
   { id: 'reference',  label: 'Reference' },
 ]
@@ -63,7 +64,7 @@ function quickSave(): void {
   <header class="app-header">
     <div class="brand">
       <strong>Speaker Design Tool</strong>
-      <span class="muted mono">v4</span>
+      <span class="muted mono">v3</span>
     </div>
 
     <nav class="tabs">

@@ -17,6 +17,10 @@ export interface Speaker {
   taps?: number[]         // 100V/70V transformer taps (W)
   type?: 'Low-Z' | '100V' | 'Both'
   category?: string
+  /** Physical cabinet dimensions in metres. */
+  widthM?: number
+  heightM?: number
+  depthM?: number
 }
 
 export interface Cable {
@@ -56,6 +60,41 @@ export interface EquipmentDatabase {
   speakers: Record<string, Speaker>
   cables: Record<string, Cable>
   amplifiers: Record<string, Amplifier>
+}
+
+// ─── Sub-array beamforming ───────────────────────────────────────────────────
+
+export type SubPreset = 'endfire' | 'broadside' | 'cardioid2' | 'cardioid3' | 'arc' | 'custom'
+
+export interface SubUnit {
+  /** Forward (+) / behind (−) position in metres. */
+  x: number
+  /** Right (+) / left (−) position in metres. */
+  y: number
+  /** Applied delay in seconds. Positive = arrives later than an un-delayed source. */
+  delay: number
+  /** Relative amplifier polarity. Use +1 or −1. */
+  polarity: 1 | -1
+  /** Linear gain (default 1.0). Combines multiplicatively with polarity. */
+  gain?: number
+  label?: string
+  /** References a key in EquipmentDatabase.speakers. */
+  speakerId?: string
+}
+
+export interface SubArrayConfig {
+  id: string
+  name: string
+  preset: SubPreset
+  units: SubUnit[]
+  count: number
+  spacing: number       // metres
+  splayDeg: number      // arc preset only
+  analysisFreq: number  // Hz
+  fieldExtent: number   // ± metres for 2D heatmap
+  boxW: number          // cabinet width (m)
+  boxH: number          // cabinet height (m)
+  boxD: number          // cabinet depth (m)
 }
 
 export interface AmpInstance {

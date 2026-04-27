@@ -6,6 +6,7 @@ import CalculatorView from '@/views/CalculatorView.vue'
 import DatabaseView from '@/views/DatabaseView.vue'
 import RoomView from '@/views/RoomView.vue'
 import CalculatorsView from '@/views/CalculatorsView.vue'
+import SubArrayView from '@/views/SubArrayView.vue'
 import ReportsView from '@/views/ReportsView.vue'
 import ReferenceView from '@/views/ReferenceView.vue'
 import AmpSelectModal from '@/components/modals/AmpSelectModal.vue'
@@ -21,6 +22,7 @@ const view = computed(() => {
     case 'database':   return DatabaseView
     case 'room':       return RoomView
     case 'calculators':return CalculatorsView
+    case 'subarray':   return SubArrayView
     case 'reports':    return ReportsView
     case 'reference':  return ReferenceView
     default:           return CalculatorView
